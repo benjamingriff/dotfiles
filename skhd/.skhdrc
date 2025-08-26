@@ -1,6 +1,7 @@
 alt - s : open -a "Slack"
 alt - c : open -a "Cursor"
-alt - a : open -a "Arc"
+alt - v : open -a "Visual Studio Code"
+alt - z : open -a "Zen"
 alt - g : open -a "Ghostty"
 alt - o : open -a "Obsidian"
 alt - t : open -a "Microsoft Teams"
@@ -28,3 +29,8 @@ alt - q : yabai -m window --close
 alt - m : yabai -m window --minimize
 alt - f : yabai -m window --toggle windowed-fullscreen
 
+cmd + alt - t : open -a "Zen" "https://t3.chat"
+
+cmd + alt - a : open "slack://channel?team=T07E209V16D&id=D08BG6KBUKU"
+cmd + alt - i : open "slack://channel?team=T07E209V16D&id=D07EXASKJVA"
+cmd + alt - k : open "slack://channel?team=T07E209V16D&id=D08B44KGUG7"

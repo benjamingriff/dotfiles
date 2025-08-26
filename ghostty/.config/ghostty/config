@@ -1,1 +1,5 @@
-theme = rose-pine
+theme = carbonfox
+background-opacity = 1.0
+keybind = shift+enter=text:\n
+font-family = JetBrainsMono Nerd Font Mono
+font-size = 14
