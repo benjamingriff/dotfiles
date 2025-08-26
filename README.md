@@ -1,4 +1,4 @@
-# Dotfiles
+# Dotfiles!
 
 This repository contains a managed collection of dotfiles and configuration files for macOS, organized with [GNU Stow](https://www.gnu.org/software/stow/).
 The goal is to keep everything modular, reproducible, and easy to set up on a new machine.
