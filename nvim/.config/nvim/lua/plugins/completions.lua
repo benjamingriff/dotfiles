@@ -1,17 +1,11 @@
 return {
-  {
-    "github/copilot.vim"
-},
-  {
+ {
     "hrsh7th/nvim-cmp",
     event = { "InsertEnter", "CmdlineEnter" },
     dependencies = {
-      -- LSP source for nvim-cmp
       "hrsh7th/cmp-nvim-lsp",
-      -- Snippet engine + snippets (required if you want snippet placeholders)
       { "L3MON4D3/LuaSnip", build = "make install_jsregexp" },
       "saadparwaiz1/cmp_luasnip",
-      -- Extra sources (optional but useful)
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
     },
@@ -19,7 +13,6 @@ return {
       local cmp = require("cmp")
       local luasnip = require("luasnip")
 
-      -- Recommended for LSP snippet expansion
       local has_words_before = function()
         local line, col = unpack(vim.api.nvim_win_get_cursor(0))
         local cur_line = vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]
@@ -63,20 +56,6 @@ return {
           { name = "path" },
         }),
       })
-
-      -- Advertise snippet capability to LSP servers
-      local capabilities = require("cmp_nvim_lsp").default_capabilities()
-      -- If you set up LSPs manually, re-setup them with these capabilities:
-      local lspconfig = require("lspconfig")
-      for _, server in ipairs({ "pyright", "ruff", "lua_ls", "ts_ls", "gopls", "ty" }) do
-        if lspconfig[server] and not lspconfig[server].manager then
-          -- Only if not already set up elsewhere
-          lspconfig[server].setup({ capabilities = capabilities })
-        end
-      end
-      -- If you already call lspconfig.<server>.setup elsewhere, pass capabilities there:
-      -- lspconfig.pyright.setup({ capabilities = capabilities, ... })
-      -- lspconfig.ty.setup({ capabilities = capabilities, ... })
     end,
   },
 }

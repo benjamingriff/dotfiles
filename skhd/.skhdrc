@@ -1,6 +1,4 @@
 alt - s : open -a "Slack"
-alt - c : open -a "Cursor"
-alt - v : open -a "Visual Studio Code"
 alt - z : open -a "Zen"
 alt - g : open -a "Ghostty"
 alt - o : open -a "Obsidian"
