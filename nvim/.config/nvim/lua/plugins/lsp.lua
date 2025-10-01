@@ -4,11 +4,11 @@ return {
     config = function()
       local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
-      local on_attach = function(client, bufnr)
+      local on_attach = function(_, bufnr)
         vim.keymap.set("n", "K", vim.lsp.buf.hover, { buffer = bufnr })
         vim.keymap.set("n", "gd", vim.lsp.buf.definition, { buffer = bufnr })
         vim.keymap.set("n", "gr", vim.lsp.buf.references, { buffer = bufnr })
-        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { buffer = bufnr})
+        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { buffer = bufnr })
       end
 
       lspconfig.lua_ls.setup({
