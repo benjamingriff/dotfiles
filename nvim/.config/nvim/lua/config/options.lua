@@ -12,6 +12,9 @@ function M.setup()
   vim.opt.backup = false
   vim.opt.writebackup = false
   vim.opt.undofile = false
+  vim.o.timeout = true
+  vim.o.timeoutlen = 300 -- default ~1000; try 200–300 for snappier mappings
+  vim.o.ttimeoutlen = 10
 end
 
 return M
