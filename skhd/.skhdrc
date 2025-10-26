@@ -1,5 +1,6 @@
 alt - s : open -a "Slack"
 alt - z : open -a "Zen"
+alt + shift - d : open -a "Dash"
 alt - g : open -a "Ghostty"
 alt - o : open -a "Obsidian"
 alt - t : open -a "Microsoft Teams"
