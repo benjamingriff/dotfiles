@@ -15,6 +15,7 @@ function M.setup()
   vim.o.timeout = true
   vim.o.timeoutlen = 300 -- default ~1000; try 200–300 for snappier mappings
   vim.o.ttimeoutlen = 10
+  vim.opt.conceallevel = 2
 end
 
 return M
