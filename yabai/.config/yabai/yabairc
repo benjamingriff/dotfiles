@@ -66,8 +66,7 @@ yabai -m config layout bsp
 # move some apps automatically to specific spaces
 yabai -m rule --add app="Zen" space=1
 yabai -m rule --add app="Ghostty" space=2
-yabai -m rule --add app="Visual Studio Code" space=3
-yabai -m rule --add app="Cursor" space=3
+yabai -m rule --add app="Dash" space=3
 yabai -m rule --add app="Obsidian" space=4
 yabai -m rule --add app="Slack" space=5
 yabai -m rule --add app="DataGrip" space=6
