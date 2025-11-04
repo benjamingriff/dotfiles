@@ -12,6 +12,10 @@ return {
         name = "vault",
         path = "~/repos/vault",
       },
+      {
+        name = "open-vault",
+        path = "~/repos/open-vault",
+      },
     },
   },
 }
