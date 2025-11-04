@@ -31,6 +31,7 @@ alias pep="cd '$HOME/OneDrive - PEP Health'"
 alias doc="cd ~/Documents" 
 alias tech="cd '$HOME/Library/CloudStorage/OneDrive-SharedLibraries-PEPHealth/Tech - Tech'"
 alias oc="opencode"
+alias oo="cd ~/repos/vault"
 
 export PATH="/opt/homebrew/opt/openjdk@11/bin:$PATH"
 export GOPATH=$HOME/go
@@ -50,3 +51,5 @@ function y() {
 	rm -f -- "$tmp"
 }
 export TMPDIR="$HOME/.cache/tmp"
+
+export PATH="$HOME/.bin:$PATH"
