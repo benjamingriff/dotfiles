@@ -1,0 +1,13 @@
+#!/bin/zsh
+
+if [ -z "$1" ]; then
+  echo 'Error: A file name must be set, e.g. on "my amazing file".'
+  exit 1
+fi
+
+file_name="$(echo "$1" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')"
+formatted_file_name="$(date '+%Y-%m-%d')-${file_name}.md"
+
+cd "/Users/benjamingriffiths/repos/vault" || exit 1
+touch "inbox/${formatted_file_name}"
+nvim "inbox/${formatted_file_name}"
