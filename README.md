@@ -13,8 +13,8 @@ Inside each package, the directory structure mirrors the layout of `$HOME`.
 For example:
 
 
-dotfiles/ zshrc/        → contains .zshrc nvim/         → contains .config/nvim/ ghostty/      → contains .config/ghostty/ sketchybar/   → contains .config/sketchybar/ skhd/         → contains .skhdrc
-yabai/        → contains .config/yabai/ yazi/         → contains .config/yazi/
+dotfiles/ bin/          → contains local bin scripts ghostty/      → contains .config/ghostty/ goose/        → contains .config/goose/ nvim/         → contains .config/nvim/ opencode/     → contains .config/opencode/ sketchybar/   → contains .config/sketchybar/ skhd/         → contains .skhdrc
+starship/     → contains .config/starship/ tmux/         → contains .config/tmux/ yabai/        → contains .config/yabai/ yazi/         → contains .config/yazi/ zshrc/        → contains .zshrc
 
 
 This means:
@@ -72,22 +72,26 @@ The included script automates stowing all packages:
 #!/usr/bin/env bash
 # install.sh - symlink all dotfiles with stow
 
-DOTFILES_DIR="$HOME/repos/dotfiles"
-cd "$DOTFILES_DIR" || exit 1
+DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$DOTFILES_DIR"
 
 PACKAGES=(
-  zshrc
-  nvim
+  bin
   ghostty
+  goose
+  nvim
+  opencode
   sketchybar
   skhd
+  starship
+  tmux
   yabai
   yazi
+  zshrc
 )
 
 for pkg in "${PACKAGES[@]}"; do
-  echo "Stowing $pkg..."
-  stow -t "$HOME" "$pkg"
+  stow -R -t "$HOME" "$pkg"
 done
 
 Run it once after cloning to set up your environment.
