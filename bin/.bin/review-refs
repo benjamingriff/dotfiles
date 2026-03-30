@@ -1,0 +1,26 @@
+#!/bin/zsh
+
+set -euo pipefail
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: review-refs <base_ref> <head_ref> [git diff args...]" >&2
+  exit 1
+fi
+
+base_ref="$1"
+head_ref="$2"
+shift 2
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "review-refs must be run inside a git repository." >&2
+  exit 1
+}
+
+export PR_REVIEW_REPO_ROOT="$repo_root"
+export PR_REVIEW_BASE_REF="$base_ref"
+export PR_REVIEW_HEAD_REF="$head_ref"
+export PR_REVIEW_BASE_LABEL="${PR_REVIEW_BASE_LABEL:-$base_ref}"
+export PR_REVIEW_HEAD_LABEL="${PR_REVIEW_HEAD_LABEL:-$head_ref}"
+
+cd "$repo_root"
+git diff --find-renames "$base_ref...$head_ref" "$@" | env EDITOR=review-open-file diffnav -s

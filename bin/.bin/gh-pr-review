@@ -1,0 +1,35 @@
+#!/bin/zsh
+
+set -euo pipefail
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: gh-pr-review <repo_name> <pr_number>" >&2
+  exit 1
+fi
+
+repo_name="$1"
+pr_number="$2"
+
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "gh-pr-review must be run inside a git repository." >&2
+  exit 1
+}
+
+cd "$repo_root"
+
+metadata="$(gh pr view --repo "$repo_name" "$pr_number" --json baseRefName,headRefName --jq '.baseRefName + "\t" + .headRefName')"
+base_branch="${metadata%%$'\t'*}"
+head_branch="${metadata#*$'\t'}"
+
+review_ref_root="refs/gh-pr-review/pr-${pr_number}"
+base_ref="${review_ref_root}/base"
+head_ref="${review_ref_root}/head"
+
+git fetch --quiet origin \
+  "${base_branch}:${base_ref}" \
+  "refs/pull/${pr_number}/head:${head_ref}"
+
+export PR_REVIEW_BASE_LABEL="$base_branch"
+export PR_REVIEW_HEAD_LABEL="$head_branch"
+
+exec review-refs "$base_ref" "$head_ref"
