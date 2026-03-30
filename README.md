@@ -106,3 +106,15 @@ Run it once after cloning to set up your environment.
 • Use stow -R to refresh symlinks after making changes.
 
 ─────────────────────────────────────────
+
+## 🧭 Review Tooling
+
+PR review docs live under `docs/review/`.
+
+- `docs/review/config-plan.md`
+- `docs/review/usage-guide.md`
+- `docs/review/pr-review-cheatsheet.md`
+
+These docs cover the terminal-first workflow built around `gh-dash`, `diffnav`, `tmux`, and `nvim -d`, plus the optional Neovim-native GitHub flow via `snacks.nvim`.
+
+─────────────────────────────────────────
