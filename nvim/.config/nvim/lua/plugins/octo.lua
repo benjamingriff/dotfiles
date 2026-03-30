@@ -4,6 +4,7 @@ return {
   opts = {
     picker = "telescope",
     enable_builtin = true,
+    use_local_fs = true,
     ssh_aliases = {
       ["github.com-work"] = "github.com",
       ["github.com-personal"] = "github.com",
