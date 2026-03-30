@@ -1,0 +1,64 @@
+#!/bin/zsh
+
+set -euo pipefail
+
+if [[ $# -eq 1 ]]; then
+  if [[ -z "${PR_REVIEW_BASE_REF:-}" || -z "${PR_REVIEW_HEAD_REF:-}" ]]; then
+    echo "Missing review context. Run from review-refs/gh-pr-review or provide refs explicitly." >&2
+    exit 1
+  fi
+  base_ref="$PR_REVIEW_BASE_REF"
+  head_ref="$PR_REVIEW_HEAD_REF"
+  file_path="$1"
+else
+  if [[ $# -ne 3 ]]; then
+    echo "Usage: review-file-compare <file_path>" >&2
+    echo "   or: review-file-compare <base_ref> <head_ref> <file_path>" >&2
+    exit 1
+  fi
+  base_ref="$1"
+  head_ref="$2"
+  file_path="$3"
+fi
+
+repo_root="${PR_REVIEW_REPO_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+base_label="${PR_REVIEW_BASE_LABEL:-$base_ref}"
+head_label="${PR_REVIEW_HEAD_LABEL:-$head_ref}"
+
+if [[ -z "$repo_root" ]]; then
+  echo "review-file-compare must be run inside a git repository or with PR_REVIEW_REPO_ROOT set." >&2
+  exit 1
+fi
+
+safe_base="${base_label//\//__}"
+safe_base="${safe_base//:/__}"
+safe_head="${head_label//\//__}"
+safe_head="${safe_head//:/__}"
+
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/review-compare.XXXXXX")"
+cleanup() {
+  rm -rf "$tmp_dir"
+}
+trap cleanup EXIT INT TERM
+
+write_file_from_ref() {
+  local ref="$1"
+  local target="$2"
+
+  mkdir -p "${target:h}"
+  if git cat-file -e "${ref}:${file_path}" 2>/dev/null; then
+    git show "${ref}:${file_path}" > "$target"
+  else
+    : > "$target"
+  fi
+}
+
+cd "$repo_root"
+
+left_file="$tmp_dir/$safe_base/$file_path"
+right_file="$tmp_dir/$safe_head/$file_path"
+
+write_file_from_ref "$base_ref" "$left_file"
+write_file_from_ref "$head_ref" "$right_file"
+
+exec nvim -d -R "$left_file" "$right_file"

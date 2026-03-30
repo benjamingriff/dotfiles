@@ -1,0 +1,25 @@
+#!/bin/zsh
+
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: review-open-file <file_path>" >&2
+  exit 1
+fi
+
+file_path="$1"
+repo_root="${PR_REVIEW_REPO_ROOT:-$PWD}"
+window_name="cmp:${file_path:t}"
+quoted_path="${(q)file_path}"
+quoted_repo_root="${(q)repo_root}"
+quoted_base_ref="${(q)${PR_REVIEW_BASE_REF:-}}"
+quoted_head_ref="${(q)${PR_REVIEW_HEAD_REF:-}}"
+quoted_base_label="${(q)${PR_REVIEW_BASE_LABEL:-}}"
+quoted_head_label="${(q)${PR_REVIEW_HEAD_LABEL:-}}"
+
+if [[ -n "${TMUX:-}" ]]; then
+  exec tmux new-window -c "$repo_root" -n "$window_name" \
+    "env PR_REVIEW_REPO_ROOT=$quoted_repo_root PR_REVIEW_BASE_REF=$quoted_base_ref PR_REVIEW_HEAD_REF=$quoted_head_ref PR_REVIEW_BASE_LABEL=$quoted_base_label PR_REVIEW_HEAD_LABEL=$quoted_head_label review-file-compare $quoted_path"
+fi
+
+exec review-file-compare "$file_path"
