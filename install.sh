@@ -13,7 +13,9 @@ fi
 
 PACKAGES=(
   bin
+  diffnav
   ghostty
+  gh-dash
   goose
   nvim
   opencode
