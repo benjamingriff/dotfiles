@@ -1,4 +1,7 @@
-theme = vesper
+theme = Rose Pine
+background = #111111
+cursor-text = #111111
+palette = 0=#111111
 background-opacity = 1.0
 keybind = shift+enter=text:\n
 font-family = "JetBrainsMono Nerd Font Mono"
