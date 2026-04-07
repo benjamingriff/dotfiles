@@ -1,5 +1,5 @@
 return {
- {
+  {
     "hrsh7th/nvim-cmp",
     event = { "InsertEnter", "CmdlineEnter" },
     dependencies = {
@@ -8,6 +8,7 @@ return {
       "saadparwaiz1/cmp_luasnip",
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
+      "kristijanhusak/vim-dadbod-completion",
     },
     config = function()
       local cmp = require("cmp")
@@ -18,6 +19,13 @@ return {
         local cur_line = vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]
         return col ~= 0 and cur_line:sub(col, col):match("%s") == nil
       end
+
+      local default_sources = cmp.config.sources({
+        { name = "nvim_lsp" },
+        { name = "luasnip" },
+        { name = "buffer" },
+        { name = "path" },
+      })
 
       cmp.setup({
         snippet = {
@@ -49,12 +57,13 @@ return {
             end
           end, { "i", "s" }),
         }),
+        sources = default_sources,
+      })
+
+      cmp.setup.filetype({ "sql", "mysql", "plsql" }, {
         sources = cmp.config.sources({
-          { name = "nvim_lsp" },
-          { name = "luasnip" },
-          { name = "buffer" },
-          { name = "path" },
-        }),
+          { name = "vim-dadbod-completion" },
+        }, default_sources),
       })
     end,
   },
