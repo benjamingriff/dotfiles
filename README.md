@@ -114,6 +114,7 @@ PR review docs live under `docs/review/`.
 - `docs/review/config-plan.md`
 - `docs/review/usage-guide.md`
 - `docs/review/pr-review-cheatsheet.md`
+- `docs/sqlfluff.md`
 
 These docs cover the terminal-first workflow built around `gh-dash`, `diffnav`, `tmux`, and `nvim -d`, plus the optional Neovim-native GitHub flow via `snacks.nvim`.
 
