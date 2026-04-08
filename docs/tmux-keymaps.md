@@ -7,7 +7,6 @@ Prefix key: `Ctrl+A`
 | Key | Action |
 |---|---|
 | `Prefix + d` | Detach from session |
-| `Prefix + S` | Choose session from list |
 | `Prefix + *` | List connected clients |
 | `Prefix + o` | Open SessionX (fuzzy session picker) |
 
@@ -98,6 +97,7 @@ Enter copy mode with `Prefix + [`
 | Key | Action |
 |---|---|
 | `Prefix + g` | Open `lazygit` in a popup |
+| `Prefix + S` | Open `secretsrc` in a popup |
 | `Prefix + R` | Reload tmux config |
 | `Prefix + K` | Clear terminal |
 | `Prefix + Ctrl+L` | Refresh client |
