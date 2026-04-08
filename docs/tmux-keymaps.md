@@ -97,6 +97,7 @@ Enter copy mode with `Prefix + [`
 
 | Key | Action |
 |---|---|
+| `Prefix + g` | Open `lazygit` in a popup |
 | `Prefix + R` | Reload tmux config |
 | `Prefix + K` | Clear terminal |
 | `Prefix + Ctrl+L` | Refresh client |
