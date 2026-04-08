@@ -13,7 +13,9 @@ The plugins are command-driven. No new keymaps are added.
 - `:DB` is available for ad hoc commands and buffer-local connections.
 - `:DBUI` and `:DBUIToggle` open the Dadbod UI drawer.
 - `nvim-cmp` includes Dadbod completions for `sql`, `mysql`, and `plsql` buffers.
+- A reusable `redshift-dev` DBUI profile is available for the SSM-forwarded Redshift tunnel at `localhost:4000/dev`.
 - Saved DBUI queries live under `stdpath("data") .. "/db_ui"`.
+- Postgres views are disabled in DBUI because Redshift requires `g:db_ui_use_postgres_views = 0`.
 
 ## Opening the UI
 
@@ -80,6 +82,24 @@ nvim
 
 Then use DBUI to add or reuse that connection for the session.
 
+### Built-in Redshift profile via SSM
+
+This setup includes a DBUI profile named `redshift-dev` for the tunnel:
+
+```text
+postgresql://db_user@127.0.0.1:4000/dev?sslmode=require
+```
+
+Use it like this:
+
+1. Start your SSM tunnel so Redshift is reachable on `localhost:4000`.
+2. Open Neovim and run `:DBUI`.
+3. Select `redshift-dev`.
+4. Dadbod will prompt for the password with hidden input when it actually connects.
+
+The password is not stored in this repo or in the configured connection URL.
+After a successful prompt, Dadbod keeps the password in memory for the current Neovim session, so reconnects to the same URL usually do not re-prompt until you restart Neovim.
+
 ## Running queries
 
 Open a SQL buffer, write a query, and save the buffer with `:w`. DBUI query buffers execute on write.
@@ -128,6 +148,28 @@ Query:
 ```sql
 select current_database(), current_schema();
 ```
+
+### Redshift over SSM
+
+Built-in DBUI profile:
+
+```text
+redshift-dev
+```
+
+Equivalent URL:
+
+```text
+postgresql://db_user@127.0.0.1:4000/dev?sslmode=require
+```
+
+You can also use it directly without DBUI:
+
+```vim
+:DB postgresql://db_user@127.0.0.1:4000/dev?sslmode=require
+```
+
+If authentication is required, Dadbod prompts for the password.
 
 ### SQLite
 
