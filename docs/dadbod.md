@@ -16,6 +16,7 @@ The plugins are command-driven. No new keymaps are added.
 - A reusable `redshift-dev` DBUI profile is available for the SSM-forwarded Redshift tunnel at `localhost:4000/dev`.
 - Saved DBUI queries live under `stdpath("data") .. "/db_ui"`.
 - Postgres views are disabled in DBUI because Redshift requires `g:db_ui_use_postgres_views = 0`.
+- Dadbod result previews (`.dbout`) are resized to about 40% of the editor height when they open.
 
 ## Opening the UI
 
