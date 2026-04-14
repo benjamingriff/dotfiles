@@ -14,6 +14,7 @@ The plugins are command-driven. No new keymaps are added.
 - `:DBUI` and `:DBUIToggle` open the Dadbod UI drawer.
 - `nvim-cmp` includes Dadbod completions for `sql`, `mysql`, and `plsql` buffers.
 - A reusable `redshift-dev` DBUI profile is available for the SSM-forwarded Redshift tunnel at `localhost:4000/dev`.
+- `redshift-dev` keeps its password in a private Neovim cache for 4 hours, so reconnects survive closing DBUI or restarting Neovim.
 - Saved DBUI queries live under `stdpath("data") .. "/db_ui"`.
 - Postgres views are disabled in DBUI because Redshift requires `g:db_ui_use_postgres_views = 0`.
 - Dadbod result previews (`.dbout`) are resized to about 40% of the editor height when they open.
@@ -31,6 +32,8 @@ Or toggle the drawer with:
 ```vim
 :DBUIToggle
 ```
+
+Opening DBUI lists saved connections but does not prompt for the `redshift-dev` password on its own.
 
 When the drawer is open:
 
@@ -95,11 +98,24 @@ Use it like this:
 
 1. Start your SSM tunnel so Redshift is reachable on `localhost:4000`.
 2. Open Neovim and run `:DBUI`.
-3. Select `redshift-dev`.
-4. Dadbod will prompt for the password with hidden input when it actually connects.
+3. Expand or connect to `redshift-dev`.
+4. If the 4-hour cache is missing or expired, Neovim prompts for the password with hidden input and validates it immediately.
+5. After a successful prompt, Dadbod reuses the cached password for 4 hours across DBUI closes and Neovim restarts.
 
 The password is not stored in this repo or in the configured connection URL.
-After a successful prompt, Dadbod keeps the password in memory for the current Neovim session, so reconnects to the same URL usually do not re-prompt until you restart Neovim.
+The cache lives in Neovim state under `stdpath("state") .. "/dadbod"` with owner-only file permissions.
+
+Useful commands for the cache:
+
+```vim
+:RedshiftDevLogin
+:RedshiftDevLogout
+:RedshiftDevCacheStatus
+```
+
+- `:RedshiftDevLogin` refreshes the cached password immediately.
+- `:RedshiftDevLogout` clears the cached password and removes the runtime auth file.
+- `:RedshiftDevCacheStatus` shows whether the cache is valid and when it expires.
 
 ## Running queries
 
@@ -170,7 +186,7 @@ You can also use it directly without DBUI:
 :DB postgresql://db_user@127.0.0.1:4000/dev?sslmode=require
 ```
 
-If authentication is required, Dadbod prompts for the password.
+Using the raw `:DB` URL still falls back to Dadbod's normal prompt flow. The 4-hour cache is wired to the `redshift-dev` DBUI profile and the helper commands above.
 
 ### SQLite
 
@@ -192,5 +208,6 @@ order by name;
 ## Notes
 
 - Keep credentials out of the dotfiles repo.
+- `redshift-dev` cache files are private local state, not repo-tracked config.
 - Prefer environment variables, local shell setup, or DBUI session connections over hardcoded strings in Neovim config.
 - If completion is missing, verify the current SQL buffer has a valid database connection.
