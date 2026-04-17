@@ -17,18 +17,47 @@ return {
     },
     init = function()
       local uv = vim.uv or vim.loop
-      local redshift_dev_name = "redshift-dev"
-      local redshift_dev_url = "postgresql://db_user@127.0.0.1:4000/dev?sslmode=require"
-      local redshift_dev_host = "localhost"
-      local redshift_dev_port = "4000"
-      local redshift_dev_database = "dev"
-      local redshift_dev_user = "ben_griffiths"
-      local redshift_dev_cache_ttl = 4 * 60 * 60
-      local redshift_dev_state_dir = vim.fn.stdpath("state") .. "/dadbod"
-      local redshift_dev_cache_path = redshift_dev_state_dir .. "/redshift-dev-cache.json"
-      local redshift_dev_passfile_path = redshift_dev_state_dir .. "/redshift-dev.pgpass"
+      local dadbod_state_dir = vim.fn.stdpath("state") .. "/dadbod"
       local dbout_preview_group = vim.api.nvim_create_augroup("dadbod_ui_dbout_preview", { clear = true })
-      local redshift_dev_expiry_timer
+      local cached_profiles = {
+        {
+          name = "redshift-dev",
+          url = "postgresql://db_user@127.0.0.1:4000/dev?sslmode=require",
+          host = "localhost",
+          port = "4000",
+          database = "dev",
+          user = "ben_griffiths",
+          cache_ttl = 4 * 60 * 60,
+          password_prompt = "Redshift dev password: ",
+          command_prefix = "RedshiftDev",
+          command_label = "redshift-dev",
+        },
+        {
+          name = "pep-brains",
+          url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
+          host = "db.example.internal",
+          port = "5432",
+          database = "app_db",
+          user = "postgres",
+          cache_ttl = 7 * 24 * 60 * 60,
+          password_prompt = "pep-brains password: ",
+          command_prefix = "PepBrains",
+          command_label = "pep-brains",
+        },
+        {
+          name = "dashboard-prod",
+          url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
+          host = "db.example.internal",
+          port = "5432",
+          database = "app_db",
+          user = "postgres",
+          cache_ttl = 7 * 24 * 60 * 60,
+          password_prompt = "dashboard-prod password: ",
+          command_prefix = "DashboardProd",
+          command_label = "dashboard-prod",
+        },
+      }
+      local cached_profiles_by_name = {}
 
       local function notify(message, level)
         vim.notify(message, level or vim.log.levels.INFO, { title = "Dadbod" })
@@ -46,7 +75,7 @@ return {
       end
 
       local function ensure_private_state_dir()
-        vim.fn.mkdir(redshift_dev_state_dir, "p", "0700")
+        vim.fn.mkdir(dadbod_state_dir, "p", "0700")
       end
 
       local function set_private_permissions(path)
@@ -73,117 +102,122 @@ return {
         return vim.fn.json_decode(value)
       end
 
-      local function stop_redshift_dev_expiry_timer()
-        if redshift_dev_expiry_timer == nil then
+      local is_list = vim.islist or vim.tbl_islist
+
+      local function pgpass_escape(value)
+        return value:gsub("\\", "\\\\"):gsub(":", "\\:")
+      end
+
+      local function stop_profile_expiry_timer(profile)
+        if profile.expiry_timer == nil then
           return
         end
 
-        redshift_dev_expiry_timer:stop()
-        redshift_dev_expiry_timer:close()
-        redshift_dev_expiry_timer = nil
+        profile.expiry_timer:stop()
+        profile.expiry_timer:close()
+        profile.expiry_timer = nil
       end
 
-      local function clear_redshift_dev_runtime_auth()
-        stop_redshift_dev_expiry_timer()
-        vim.env.PGPASSFILE = nil
-        if vim.fn.filereadable(redshift_dev_passfile_path) == 1 then
-          vim.fn.delete(redshift_dev_passfile_path)
+      local function clear_profile_runtime_auth(profile)
+        stop_profile_expiry_timer(profile)
+        if vim.env.PGPASSFILE == profile.passfile_path then
+          vim.env.PGPASSFILE = nil
+        end
+
+        if vim.fn.filereadable(profile.passfile_path) == 1 then
+          vim.fn.delete(profile.passfile_path)
         end
       end
 
-      local function clear_redshift_dev_cache(opts)
+      local function clear_profile_cache(profile, opts)
         opts = opts or {}
 
-        clear_redshift_dev_runtime_auth()
-        if vim.fn.filereadable(redshift_dev_cache_path) == 1 then
-          vim.fn.delete(redshift_dev_cache_path)
+        clear_profile_runtime_auth(profile)
+        if vim.fn.filereadable(profile.cache_path) == 1 then
+          vim.fn.delete(profile.cache_path)
         end
 
         dbui_reset_state()
 
         if not opts.silent then
-          notify("Cleared cached password for " .. redshift_dev_name .. ".", vim.log.levels.INFO)
+          notify("Cleared cached password for " .. profile.name .. ".", vim.log.levels.INFO)
         end
       end
 
-      local function schedule_redshift_dev_expiry(expires_at)
+      local function schedule_profile_expiry(profile, expires_at)
         if uv == nil or uv.new_timer == nil then
           return
         end
 
-        stop_redshift_dev_expiry_timer()
+        stop_profile_expiry_timer(profile)
 
         local delay = math.max(0, (expires_at - os.time()) * 1000)
-        redshift_dev_expiry_timer = uv.new_timer()
-        redshift_dev_expiry_timer:start(delay, 0, vim.schedule_wrap(function()
-          clear_redshift_dev_cache({ silent = true })
-          notify("Password cache expired for " .. redshift_dev_name .. ".", vim.log.levels.INFO)
+        profile.expiry_timer = uv.new_timer()
+        profile.expiry_timer:start(delay, 0, vim.schedule_wrap(function()
+          clear_profile_cache(profile, { silent = true })
+          notify("Password cache expired for " .. profile.name .. ".", vim.log.levels.INFO)
         end))
       end
 
-      local function read_redshift_dev_cache()
-        if vim.fn.filereadable(redshift_dev_cache_path) == 0 then
+      local function read_profile_cache(profile)
+        if vim.fn.filereadable(profile.cache_path) == 0 then
           return nil
         end
 
         local ok, decoded = pcall(function()
-          local lines = vim.fn.readfile(redshift_dev_cache_path)
+          local lines = vim.fn.readfile(profile.cache_path)
           return json_decode(table.concat(lines, "\n"))
         end)
 
         if not ok or type(decoded) ~= "table" then
-          clear_redshift_dev_cache({ silent = true })
+          clear_profile_cache(profile, { silent = true })
           return nil
         end
 
         if type(decoded.password) ~= "string" or decoded.password == "" or type(decoded.expires_at) ~= "number" then
-          clear_redshift_dev_cache({ silent = true })
+          clear_profile_cache(profile, { silent = true })
           return nil
         end
 
         if decoded.expires_at <= os.time() then
-          clear_redshift_dev_cache({ silent = true })
+          clear_profile_cache(profile, { silent = true })
           return nil
         end
 
         return decoded
       end
 
-      local function pgpass_escape(value)
-        return value:gsub("\\", "\\\\"):gsub(":", "\\:")
-      end
-
-      local function write_redshift_dev_passfile(password)
+      local function write_profile_passfile(profile, password)
         ensure_private_state_dir()
 
         local line = table.concat({
-          redshift_dev_host,
-          redshift_dev_port,
-          redshift_dev_database,
-          redshift_dev_user,
+          profile.host,
+          profile.port,
+          profile.database,
+          profile.user,
           pgpass_escape(password),
         }, ":")
 
-        vim.fn.writefile({ line }, redshift_dev_passfile_path)
-        set_private_permissions(redshift_dev_passfile_path)
-        vim.env.PGPASSFILE = redshift_dev_passfile_path
+        vim.fn.writefile({ line }, profile.passfile_path)
+        set_private_permissions(profile.passfile_path)
+        vim.env.PGPASSFILE = profile.passfile_path
       end
 
-      local function apply_redshift_dev_runtime_auth(password, expires_at)
-        write_redshift_dev_passfile(password)
-        schedule_redshift_dev_expiry(expires_at)
+      local function apply_profile_runtime_auth(profile, password, expires_at)
+        write_profile_passfile(profile, password)
+        schedule_profile_expiry(profile, expires_at)
       end
 
-      local function validate_redshift_dev_password(password)
+      local function validate_profile_password(profile, password)
         local temp_passfile = vim.fn.tempname()
         local result
 
         vim.fn.writefile({
           table.concat({
-            redshift_dev_host,
-            redshift_dev_port,
-            redshift_dev_database,
-            redshift_dev_user,
+            profile.host,
+            profile.port,
+            profile.database,
+            profile.user,
             pgpass_escape(password),
           }, ":"),
         }, temp_passfile)
@@ -200,7 +234,7 @@ return {
             "-w",
             "--no-psqlrc",
             "--dbname",
-            redshift_dev_url,
+            profile.url,
             "-tAc",
             "select 1;",
           }, {
@@ -218,7 +252,7 @@ return {
             "-w",
             "--no-psqlrc",
             "--dbname",
-            redshift_dev_url,
+            profile.url,
             "-tAc",
             "select 1;",
           })
@@ -244,36 +278,36 @@ return {
         return false, vim.trim(error_output)
       end
 
-      local function store_redshift_dev_cache(password)
+      local function store_profile_cache(profile, password)
         ensure_private_state_dir()
 
-        local expires_at = os.time() + redshift_dev_cache_ttl
+        local expires_at = os.time() + profile.cache_ttl
         vim.fn.writefile({
           json_encode({
             password = password,
             expires_at = expires_at,
           }),
-        }, redshift_dev_cache_path)
-        set_private_permissions(redshift_dev_cache_path)
-        apply_redshift_dev_runtime_auth(password, expires_at)
+        }, profile.cache_path)
+        set_private_permissions(profile.cache_path)
+        apply_profile_runtime_auth(profile, password, expires_at)
         dbui_reset_state()
 
         return expires_at
       end
 
-      local function refresh_redshift_dev_cache(password)
-        local ok, error_output = validate_redshift_dev_password(password)
+      local function refresh_profile_cache(profile, password)
+        local ok, error_output = validate_profile_password(profile, password)
         if not ok then
-          clear_redshift_dev_runtime_auth()
+          clear_profile_runtime_auth(profile)
           return false, error_output
         end
 
-        local expires_at = store_redshift_dev_cache(password)
+        local expires_at = store_profile_cache(profile, password)
         return true, expires_at
       end
 
-      local function prompt_for_redshift_dev_password()
-        local password = vim.fn.inputsecret("Redshift dev password: ")
+      local function prompt_for_profile_password(profile)
+        local password = vim.fn.inputsecret(profile.password_prompt)
         if type(password) ~= "string" or password == "" then
           return nil
         end
@@ -281,12 +315,12 @@ return {
         return password
       end
 
-      local function ensure_redshift_dev_cache(opts)
+      local function ensure_profile_cache(profile, opts)
         opts = opts or {}
 
-        local cached = read_redshift_dev_cache()
+        local cached = read_profile_cache(profile)
         if cached ~= nil then
-          apply_redshift_dev_runtime_auth(cached.password, cached.expires_at)
+          apply_profile_runtime_auth(profile, cached.password, cached.expires_at)
           return true, "cached"
         end
 
@@ -294,26 +328,29 @@ return {
           return false, "missing"
         end
 
-        local password = prompt_for_redshift_dev_password()
+        local password = prompt_for_profile_password(profile)
         if password == nil then
-          clear_redshift_dev_runtime_auth()
+          clear_profile_runtime_auth(profile)
           return false, "cancelled"
         end
 
-        local ok, result = refresh_redshift_dev_cache(password)
+        local ok, result = refresh_profile_cache(profile, password)
         if not ok then
-          notify("Authentication failed for " .. redshift_dev_name .. ": " .. result, vim.log.levels.ERROR)
+          notify("Authentication failed for " .. profile.name .. ": " .. result, vim.log.levels.ERROR)
           return false, "failed"
         end
 
-        notify("Cached password for " .. redshift_dev_name .. " until " .. os.date("%Y-%m-%d %H:%M:%S", result) .. ".", vim.log.levels.INFO)
+        notify(
+          "Cached password for " .. profile.name .. " until " .. os.date("%Y-%m-%d %H:%M:%S", result) .. ".",
+          vim.log.levels.INFO
+        )
         return true, "prompted"
       end
 
-      local function redshift_dev_status_message()
-        local cached = read_redshift_dev_cache()
+      local function profile_status_message(profile)
+        local cached = read_profile_cache(profile)
         if cached == nil then
-          return "No cached password for " .. redshift_dev_name .. "."
+          return "No cached password for " .. profile.name .. "."
         end
 
         local seconds_remaining = math.max(0, cached.expires_at - os.time())
@@ -323,11 +360,20 @@ return {
 
         return string.format(
           "Cached password for %s expires at %s (%dh %02dm remaining).",
-          redshift_dev_name,
+          profile.name,
           os.date("%Y-%m-%d %H:%M:%S", cached.expires_at),
           hours_remaining,
           remaining_minutes
         )
+      end
+
+      local function prime_profile_expiry_timer(profile)
+        local cached = read_profile_cache(profile)
+        if cached == nil then
+          return
+        end
+
+        schedule_profile_expiry(profile, cached.expires_at)
       end
 
       local function add_dbui_profile(name, url)
@@ -336,19 +382,23 @@ return {
           return
         end
 
-        if vim.tbl_islist(vim.g.dbs) then
-          for _, profile in ipairs(vim.g.dbs) do
+        local current_dbs = vim.g.dbs
+
+        if is_list(current_dbs) then
+          for _, profile in ipairs(current_dbs) do
             if type(profile) == "table" and profile.name == name then
               return
             end
           end
 
-          table.insert(vim.g.dbs, { name = name, url = url })
+          table.insert(current_dbs, { name = name, url = url })
+          vim.g.dbs = current_dbs
           return
         end
 
-        if vim.g.dbs[name] == nil then
-          vim.g.dbs[name] = url
+        if current_dbs[name] == nil then
+          current_dbs[name] = url
+          vim.g.dbs = current_dbs
         end
       end
 
@@ -365,51 +415,99 @@ return {
         pcall(vim.api.nvim_win_set_height, win, target_height)
       end
 
-      local function patch_redshift_dev_dbui_connect()
+      local function patch_cached_profile_dbui_connect()
         if vim.fn.exists("*db_ui#drawer#get") == 0 then
           return
         end
 
-        _G.__redshift_dev_ensure_cache = function(prompt)
-          local ok, reason = ensure_redshift_dev_cache({ prompt = prompt })
+        _G.__dadbod_cached_profile_ensure_cache = function(args)
+          local profile = cached_profiles_by_name[args[1]]
+          if profile == nil then
+            return {
+              handled = false,
+              ok = true,
+              reason = "unmanaged",
+            }
+          end
+
+          local ok, reason = ensure_profile_cache(profile, { prompt = args[2] })
           return {
+            handled = true,
             ok = ok,
             reason = reason,
           }
         end
 
-        vim.cmd(string.format([[
-          let g:redshift_dev_drawer = db_ui#drawer#get()
-          if !empty(g:redshift_dev_drawer) && has_key(g:redshift_dev_drawer, 'dbui') && !empty(g:redshift_dev_drawer.dbui)
-            let g:redshift_dev_dbui = g:redshift_dev_drawer.dbui
-            if !get(g:redshift_dev_dbui, '_redshift_dev_connect_patched', 0)
-              let g:redshift_dev_dbui._redshift_dev_original_connect = g:redshift_dev_dbui.connect
-              let g:redshift_dev_dbui._redshift_dev_connect_patched = 1
+        vim.cmd([[
+          let g:dadbod_cached_profile_drawer = db_ui#drawer#get()
+          if !empty(g:dadbod_cached_profile_drawer) && has_key(g:dadbod_cached_profile_drawer, 'dbui') && !empty(g:dadbod_cached_profile_drawer.dbui)
+            let g:dadbod_cached_profile_dbui = g:dadbod_cached_profile_drawer.dbui
+            if !get(g:dadbod_cached_profile_dbui, '_cached_profile_connect_patched', 0)
+              let g:dadbod_cached_profile_dbui._cached_profile_original_connect = g:dadbod_cached_profile_dbui.connect
+              let g:dadbod_cached_profile_dbui._cached_profile_connect_patched = 1
 
-              function! g:redshift_dev_dbui.connect(db) dict abort
-                if get(a:db, 'name', '') ==# '%s'
-                  let l:auth = luaeval('__redshift_dev_ensure_cache(_A)', v:true)
-                  if !get(l:auth, 'ok', v:false)
-                    let a:db.conn = ''
-                    let a:db.conn_error = get(l:auth, 'reason', '') ==# 'failed'
-                          \ ? 'Authentication failed for %s.'
-                          \ : ''
-                    let a:db.conn_tried = get(l:auth, 'reason', '') ==# 'failed' ? 1 : 0
-                    redraw!
-                    return a:db
-                  endif
+              function! g:dadbod_cached_profile_dbui.connect(db) dict abort
+                let l:auth = luaeval('__dadbod_cached_profile_ensure_cache(_A)', [get(a:db, 'name', ''), v:true])
+                if get(l:auth, 'handled', v:false) && !get(l:auth, 'ok', v:false)
+                  let a:db.conn = ''
+                  let a:db.conn_error = get(l:auth, 'reason', '') ==# 'failed'
+                        \ ? 'Authentication failed for ' . get(a:db, 'name', '') . '.'
+                        \ : ''
+                  let a:db.conn_tried = get(l:auth, 'reason', '') ==# 'failed' ? 1 : 0
+                  redraw!
+                  return a:db
                 endif
 
-                return call(self._redshift_dev_original_connect, [a:db], self)
+                return call(self._cached_profile_original_connect, [a:db], self)
               endfunction
             endif
           endif
 
-          unlet! g:redshift_dev_dbui g:redshift_dev_drawer
-        ]], redshift_dev_name, redshift_dev_name))
+          unlet! g:dadbod_cached_profile_dbui g:dadbod_cached_profile_drawer
+        ]])
       end
 
-      add_dbui_profile(redshift_dev_name, redshift_dev_url)
+      for _, profile in ipairs(cached_profiles) do
+        profile.cache_path = dadbod_state_dir .. "/" .. profile.name .. "-cache.json"
+        profile.passfile_path = dadbod_state_dir .. "/" .. profile.name .. ".pgpass"
+        profile.expiry_timer = nil
+        cached_profiles_by_name[profile.name] = profile
+        add_dbui_profile(profile.name, profile.url)
+        prime_profile_expiry_timer(profile)
+
+        create_or_replace_user_command(profile.command_prefix .. "Login", function()
+          local password = prompt_for_profile_password(profile)
+          if password == nil then
+            notify("Skipped refreshing cached password for " .. profile.name .. ".", vim.log.levels.INFO)
+            return
+          end
+
+          local ok, result = refresh_profile_cache(profile, password)
+          if not ok then
+            notify("Authentication failed for " .. profile.name .. ": " .. result, vim.log.levels.ERROR)
+            return
+          end
+
+          notify(
+            "Cached password for " .. profile.name .. " until " .. os.date("%Y-%m-%d %H:%M:%S", result) .. ".",
+            vim.log.levels.INFO
+          )
+        end, {
+          desc = "Refresh the cached password for " .. profile.command_label,
+        })
+
+        create_or_replace_user_command(profile.command_prefix .. "Logout", function()
+          clear_profile_cache(profile)
+        end, {
+          desc = "Clear the cached password for " .. profile.command_label,
+        })
+
+        create_or_replace_user_command(profile.command_prefix .. "CacheStatus", function()
+          notify(profile_status_message(profile), vim.log.levels.INFO)
+        end, {
+          desc = "Show the cache status for " .. profile.command_label,
+        })
+      end
 
       vim.g.db_ui_use_nerd_fonts = 1
       vim.g.db_ui_show_help = 0
@@ -420,40 +518,8 @@ return {
       vim.api.nvim_create_autocmd("User", {
         group = dbout_preview_group,
         pattern = "DBUIOpened",
-        callback = patch_redshift_dev_dbui_connect,
+        callback = patch_cached_profile_dbui_connect,
       })
-
-      create_or_replace_user_command("RedshiftDevLogin", function()
-        local password = prompt_for_redshift_dev_password()
-        if password == nil then
-          notify("Skipped refreshing cached password for " .. redshift_dev_name .. ".", vim.log.levels.INFO)
-          return
-        end
-
-        local ok, result = refresh_redshift_dev_cache(password)
-        if not ok then
-          notify("Authentication failed for " .. redshift_dev_name .. ": " .. result, vim.log.levels.ERROR)
-          return
-        end
-
-        notify("Cached password for " .. redshift_dev_name .. " until " .. os.date("%Y-%m-%d %H:%M:%S", result) .. ".", vim.log.levels.INFO)
-      end, {
-        desc = "Refresh the cached password for redshift-dev",
-      })
-
-      create_or_replace_user_command("RedshiftDevLogout", function()
-        clear_redshift_dev_cache()
-      end, {
-        desc = "Clear the cached password for redshift-dev",
-      })
-
-      create_or_replace_user_command("RedshiftDevCacheStatus", function()
-        notify(redshift_dev_status_message(), vim.log.levels.INFO)
-      end, {
-        desc = "Show the cache status for redshift-dev",
-      })
-
-      ensure_redshift_dev_cache({ prompt = false })
 
       vim.api.nvim_create_autocmd("FileType", {
         group = dbout_preview_group,

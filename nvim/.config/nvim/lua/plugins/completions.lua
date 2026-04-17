@@ -13,6 +13,28 @@ return {
     config = function()
       local cmp = require("cmp")
       local luasnip = require("luasnip")
+      local has_dadbod_completion, dadbod_completion = pcall(require, "vim_dadbod_completion")
+
+      if has_dadbod_completion and dadbod_completion.nvim_cmp_source ~= nil then
+        local original_complete = dadbod_completion.nvim_cmp_source.complete
+
+        dadbod_completion.nvim_cmp_source.complete = function(self, params, callback)
+          local ok, err = pcall(original_complete, self, params, callback)
+          if ok then
+            return
+          end
+
+          if type(err) == "string" and err:match('Key not present in Dictionary: "conn"') then
+            callback({
+              items = {},
+              isIncomplete = false,
+            })
+            return
+          end
+
+          error(err)
+        end
+      end
 
       local has_words_before = function()
         local line, col = unpack(vim.api.nvim_win_get_cursor(0))

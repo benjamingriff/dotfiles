@@ -13,8 +13,10 @@ The plugins are command-driven. No new keymaps are added.
 - `:DB` is available for ad hoc commands and buffer-local connections.
 - `:DBUI` and `:DBUIToggle` open the Dadbod UI drawer.
 - `nvim-cmp` includes Dadbod completions for `sql`, `mysql`, and `plsql` buffers.
-- A reusable `redshift-dev` DBUI profile is available for the SSM-forwarded Redshift tunnel at `localhost:4000/dev`.
-- `redshift-dev` keeps its password in a private Neovim cache for 4 hours, so reconnects survive closing DBUI or restarting Neovim.
+- Reusable DBUI profiles are available for `redshift-dev`, `pep-brains`, and `dashboard-prod`.
+- `redshift-dev` keeps its password in a private Neovim cache for 4 hours.
+- `pep-brains` keeps its password in the same private cache for 7 days.
+- `dashboard-prod` keeps its password in the same private cache for 7 days.
 - Saved DBUI queries live under `stdpath("data") .. "/db_ui"`.
 - Postgres views are disabled in DBUI because Redshift requires `g:db_ui_use_postgres_views = 0`.
 - Dadbod result previews (`.dbout`) are resized to about 40% of the editor height when they open.
@@ -33,7 +35,7 @@ Or toggle the drawer with:
 :DBUIToggle
 ```
 
-Opening DBUI lists saved connections but does not prompt for the `redshift-dev` password on its own.
+Opening DBUI lists saved connections but does not prompt for cached-profile passwords on its own.
 
 When the drawer is open:
 
@@ -117,6 +119,66 @@ Useful commands for the cache:
 - `:RedshiftDevLogout` clears the cached password and removes the runtime auth file.
 - `:RedshiftDevCacheStatus` shows whether the cache is valid and when it expires.
 
+### Built-in Aurora Postgres profile
+
+This setup also includes a DBUI profile named `pep-brains`:
+
+```text
+postgresql://db_user@db.example.internal:5432/app_db?sslmode=require
+```
+
+Use it like this:
+
+1. Open Neovim and run `:DBUI`.
+2. Expand or connect to `pep-brains`.
+3. If the 7-day cache is missing or expired, Neovim prompts for the password with hidden input and validates it immediately.
+4. After a successful prompt, Dadbod reuses the cached password for 7 days across DBUI closes and Neovim restarts.
+
+The password is not stored in this repo or in the configured connection URL.
+The cache lives in Neovim state under `stdpath("state") .. "/dadbod"` with owner-only file permissions.
+
+Useful commands for the cache:
+
+```vim
+:PepBrainsLogin
+:PepBrainsLogout
+:PepBrainsCacheStatus
+```
+
+- `:PepBrainsLogin` refreshes the cached password immediately.
+- `:PepBrainsLogout` clears the cached password and removes the runtime auth file.
+- `:PepBrainsCacheStatus` shows whether the cache is valid and when it expires.
+
+### Built-in Dashboard Postgres profile
+
+This setup also includes a DBUI profile named `dashboard-prod`:
+
+```text
+postgresql://db_user@db.example.internal:5432/app_db?sslmode=require
+```
+
+Use it like this:
+
+1. Open Neovim and run `:DBUI`.
+2. Expand or connect to `dashboard-prod`.
+3. If the 7-day cache is missing or expired, Neovim prompts for the password with hidden input and validates it immediately.
+4. After a successful prompt, Dadbod reuses the cached password for 7 days across DBUI closes and Neovim restarts.
+
+The password is not stored in this repo or in the configured connection URL.
+The cache lives in Neovim state under `stdpath("state") .. "/dadbod"` with owner-only file permissions.
+
+Useful commands for the cache:
+
+```vim
+:DashboardProdLogin
+:DashboardProdLogout
+:DashboardProdCacheStatus
+```
+
+- `:DashboardProdLogin` refreshes the cached password immediately.
+- `:DashboardProdLogout` clears the cached password and removes the runtime auth file.
+- `:DashboardProdCacheStatus` shows whether the cache is valid and when it expires.
+
 ## Running queries
 
 Open a SQL buffer, write a query, and save the buffer with `:w`. DBUI query buffers execute on write.
@@ -188,6 +250,34 @@ You can also use it directly without DBUI:
 
 Using the raw `:DB` URL still falls back to Dadbod's normal prompt flow. The 4-hour cache is wired to the `redshift-dev` DBUI profile and the helper commands above.
 
+### Aurora Postgres
+
+Built-in DBUI profile:
+
+```text
+pep-brains
+```
+
+Equivalent URL:
+
+```text
+postgresql://db_user@db.example.internal:5432/app_db?sslmode=require
+```
+
+### Dashboard Postgres
+
+Built-in DBUI profile:
+
+```text
+dashboard-prod
+```
+
+Equivalent URL:
+
+```text
+postgresql://db_user@db.example.internal:5432/app_db?sslmode=require
+```
+
 ### SQLite
 
 Buffer-local connection:
@@ -208,6 +298,6 @@ order by name;
 ## Notes
 
 - Keep credentials out of the dotfiles repo.
-- `redshift-dev` cache files are private local state, not repo-tracked config.
+- Cached profile files such as `redshift-dev`, `pep-brains`, and `dashboard-prod` are private local state, not repo-tracked config.
 - Prefer environment variables, local shell setup, or DBUI session connections over hardcoded strings in Neovim config.
 - If completion is missing, verify the current SQL buffer has a valid database connection.
