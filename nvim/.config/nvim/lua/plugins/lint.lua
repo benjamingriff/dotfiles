@@ -7,6 +7,8 @@ return {
 
       lint.linters_by_ft = {
         dbt = { "sqlfluff" },
+        mysql = { "sqlfluff" },
+        plsql = { "sqlfluff" },
         sql = { "sqlfluff" },
       }
 
