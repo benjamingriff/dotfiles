@@ -15,7 +15,7 @@ The plugins are command-driven. No new keymaps are added.
 - `nvim-cmp` includes Dadbod completions for `sql`, `mysql`, and `plsql` buffers.
 - Public profile labels remain stable for `redshift-dev`, `pep-brains`, and `dashboard-prod`.
 - Real connection URLs are loaded from a local file at `stdpath("config") .. "/lua/local/dadbod_profiles.lua"`.
-- Passwords are loaded from the local profile file and cached in Neovim state with owner-only permissions.
+- Passwords are prompted on demand and cached in Neovim state with owner-only permissions.
 - `redshift-dev` keeps its cache for 4 hours.
 - `pep-brains` and `dashboard-prod` keep their caches for 7 days.
 - Saved DBUI queries live under `stdpath("data") .. "/db_ui"`.
@@ -43,11 +43,9 @@ Expected shape:
 return {
   ["redshift-dev"] = {
     url = "postgresql://db_user@127.0.0.1:4000/dev?sslmode=require",
-    password = "replace-me",
   },
   ["pep-brains"] = {
     url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
-    password = "replace-me",
   },
 }
 ```
@@ -55,8 +53,8 @@ return {
 Rules:
 
 - `url` must not include a password.
-- `password` must be a non-empty string.
 - Only profiles present in the local file are added to DBUI.
+- On first connect or after cache expiry, Neovim prompts for the password and caches it locally.
 
 ## Opening the UI
 
@@ -83,11 +81,10 @@ When the drawer is open:
 ## Connection flow
 
 1. Add the real URL to the ignored local profile file.
-2. Add the password as `password` in that same local profile file.
-3. Open Neovim and run `:DBUI`.
-4. Expand or connect to the profile label.
-5. On a cache miss, Neovim validates the local password with `psql` and writes a local owner-only `PGPASSFILE`.
-6. Reconnects use the cached local credentials until the cache expires or you clear it.
+2. Open Neovim and run `:DBUI`.
+3. Expand or connect to the profile label.
+4. On a cache miss, Neovim prompts for the password, validates it with `psql`, and writes a local owner-only `PGPASSFILE`.
+5. Reconnects use the cached local credentials until the cache expires or you clear it.
 
 The cache lives in Neovim state under `stdpath("state") .. "/dadbod"`.
 
@@ -105,7 +102,7 @@ Useful commands:
 :DashboardProdCacheStatus
 ```
 
-- `*Login` refreshes cached credentials from the local profile file immediately.
+- `*Login` prompts for the password immediately and refreshes the cache.
 - `*Logout` clears the cached credentials and removes the runtime auth file.
 - `*CacheStatus` shows whether the profile is configured locally and when the cache expires.
 
@@ -113,7 +110,7 @@ Useful commands:
 
 You can still use one-off URLs with `:DB`, `b:db`, `g:db`, or environment variables.
 Those flows are unchanged, but they are easier to leak into shell history or tracked config.
-For anything reusable, prefer the ignored local profile file.
+For anything reusable, prefer the ignored local profile file plus the built-in prompt-and-cache flow.
 
 Examples:
 
@@ -155,6 +152,6 @@ To remove previously committed values from public history as well, use the runbo
 
 ## Notes
 
-- Keep credentials and real connection metadata out of tracked dotfiles files.
+- Keep passwords and real connection metadata out of tracked dotfiles files.
 - Cached profile files are private local state, not repo-tracked config.
 - If completion is missing, verify the current SQL buffer has a valid database connection.

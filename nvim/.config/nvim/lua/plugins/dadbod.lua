@@ -218,7 +218,6 @@ return {
         profile.port = nil
         profile.database = nil
         profile.user = nil
-        profile.password = nil
 
         if config_error ~= nil then
           return
@@ -236,18 +235,35 @@ return {
           return
         end
 
-        if type(profile_config.password) ~= "string" or profile_config.password == "" then
-          profile.setup_error = profile.name .. ": missing `password`."
-          return
-        end
-
         profile.url = parsed_url.url
         profile.host = parsed_url.host
         profile.port = parsed_url.port
         profile.database = parsed_url.database
         profile.user = parsed_url.user
-        profile.password = profile_config.password
         profile.setup_error = nil
+      end
+
+      local function prompt_for_profile_password(profile)
+        if vim.fn.inputsave ~= nil then
+          vim.fn.inputsave()
+        end
+
+        local ok, password = pcall(vim.fn.inputsecret, string.format("Password for %s: ", profile.name))
+
+        if vim.fn.inputrestore ~= nil then
+          vim.fn.inputrestore()
+        end
+
+        if not ok then
+          return nil, "Password prompt was interrupted."
+        end
+
+        password = password or ""
+        if password == "" then
+          return nil, "Password prompt was cancelled."
+        end
+
+        return password
       end
 
       local function pgpass_escape(value)
@@ -424,10 +440,10 @@ return {
           return false, profile.setup_error
         end
 
-        local password = profile.password
-        if type(password) ~= "string" or password == "" then
+        local password, prompt_error = prompt_for_profile_password(profile)
+        if password == nil then
           clear_profile_runtime_auth(profile)
-          return false, profile.name .. ": missing `password`."
+          return false, prompt_error
         end
 
         local ok, error_output = validate_profile_password(profile, password)
@@ -606,7 +622,7 @@ return {
             vim.log.levels.INFO
           )
         end, {
-          desc = "Refresh cached credentials from the local profile for " .. profile.command_label,
+          desc = "Prompt for and cache credentials for " .. profile.command_label,
         })
 
         create_or_replace_user_command(profile.command_prefix .. "Logout", function()
