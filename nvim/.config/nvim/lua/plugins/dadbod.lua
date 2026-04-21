@@ -218,7 +218,7 @@ return {
         profile.port = nil
         profile.database = nil
         profile.user = nil
-        profile.password_ref = nil
+        profile.password = nil
 
         if config_error ~= nil then
           return
@@ -236,13 +236,8 @@ return {
           return
         end
 
-        if type(profile_config.password_ref) ~= "string" or profile_config.password_ref == "" then
-          profile.setup_error = profile.name .. ": missing `password_ref`."
-          return
-        end
-
-        if not profile_config.password_ref:match("^op://") then
-          profile.setup_error = profile.name .. ": `password_ref` must be a 1Password secret reference."
+        if type(profile_config.password) ~= "string" or profile_config.password == "" then
+          profile.setup_error = profile.name .. ": missing `password`."
           return
         end
 
@@ -251,26 +246,8 @@ return {
         profile.port = parsed_url.port
         profile.database = parsed_url.database
         profile.user = parsed_url.user
-        profile.password_ref = profile_config.password_ref
+        profile.password = profile_config.password
         profile.setup_error = nil
-      end
-
-      local function read_secret_reference(secret_ref)
-        if vim.fn.executable("op") == 0 then
-          return nil, "1Password CLI (`op`) is not installed."
-        end
-
-        local result = command_result({ "op", "read", secret_ref })
-        if result.code ~= 0 then
-          return nil, "1Password lookup failed: " .. normalize_error_output(result, "Unable to read secret reference.")
-        end
-
-        local value = vim.trim(result.stdout or "")
-        if value == "" then
-          return nil, "1Password returned an empty secret for " .. secret_ref .. "."
-        end
-
-        return value
       end
 
       local function pgpass_escape(value)
@@ -447,10 +424,10 @@ return {
           return false, profile.setup_error
         end
 
-        local password, lookup_error = read_secret_reference(profile.password_ref)
-        if password == nil then
+        local password = profile.password
+        if type(password) ~= "string" or password == "" then
           clear_profile_runtime_auth(profile)
-          return false, lookup_error
+          return false, profile.name .. ": missing `password`."
         end
 
         local ok, error_output = validate_profile_password(profile, password)
@@ -629,7 +606,7 @@ return {
             vim.log.levels.INFO
           )
         end, {
-          desc = "Fetch credentials from 1Password for " .. profile.command_label,
+          desc = "Refresh cached credentials from the local profile for " .. profile.command_label,
         })
 
         create_or_replace_user_command(profile.command_prefix .. "Logout", function()

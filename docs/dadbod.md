@@ -15,7 +15,7 @@ The plugins are command-driven. No new keymaps are added.
 - `nvim-cmp` includes Dadbod completions for `sql`, `mysql`, and `plsql` buffers.
 - Public profile labels remain stable for `redshift-dev`, `pep-brains`, and `dashboard-prod`.
 - Real connection URLs are loaded from a local file at `stdpath("config") .. "/lua/local/dadbod_profiles.lua"`.
-- Passwords are fetched from 1Password with `op read` and cached in Neovim state with owner-only permissions.
+- Passwords are loaded from the local profile file and cached in Neovim state with owner-only permissions.
 - `redshift-dev` keeps its cache for 4 hours.
 - `pep-brains` and `dashboard-prod` keep their caches for 7 days.
 - Saved DBUI queries live under `stdpath("data") .. "/db_ui"`.
@@ -43,11 +43,11 @@ Expected shape:
 return {
   ["redshift-dev"] = {
     url = "postgresql://db_user@127.0.0.1:4000/dev?sslmode=require",
-    password_ref = "op://Private/redshift-dev/password",
+    password = "replace-me",
   },
   ["pep-brains"] = {
     url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
-    password_ref = "op://Private/pep-brains/password",
+    password = "replace-me",
   },
 }
 ```
@@ -55,23 +55,8 @@ return {
 Rules:
 
 - `url` must not include a password.
-- `password_ref` must be a 1Password secret reference that `op read` can resolve.
+- `password` must be a non-empty string.
 - Only profiles present in the local file are added to DBUI.
-
-## 1Password requirement
-
-This setup expects the 1Password CLI to be installed and signed in locally.
-
-Typical flow:
-
-```bash
-op signin
-```
-
-If `op` is missing or signed out, the DBUI profile connection fails with an explicit error instead of prompting for a plaintext password.
-
-1Password secret references can use names or IDs. IDs are the more stable option.
-The easiest way to create a reference is to use the 1Password app's "Copy Secret Reference" action on the password field.
 
 ## Opening the UI
 
@@ -98,12 +83,11 @@ When the drawer is open:
 ## Connection flow
 
 1. Add the real URL to the ignored local profile file.
-2. Store the password in 1Password.
-3. Put the 1Password secret reference for that password in `password_ref`.
-4. Open Neovim and run `:DBUI`.
-5. Expand or connect to the profile label.
-6. On a cache miss, Neovim reads the password from 1Password, validates it with `psql`, and writes a local owner-only `PGPASSFILE`.
-7. Reconnects use the cached local credentials until the cache expires or you clear it.
+2. Add the password as `password` in that same local profile file.
+3. Open Neovim and run `:DBUI`.
+4. Expand or connect to the profile label.
+5. On a cache miss, Neovim validates the local password with `psql` and writes a local owner-only `PGPASSFILE`.
+6. Reconnects use the cached local credentials until the cache expires or you clear it.
 
 The cache lives in Neovim state under `stdpath("state") .. "/dadbod"`.
 
@@ -121,7 +105,7 @@ Useful commands:
 :DashboardProdCacheStatus
 ```
 
-- `*Login` refreshes cached credentials from 1Password immediately.
+- `*Login` refreshes cached credentials from the local profile file immediately.
 - `*Logout` clears the cached credentials and removes the runtime auth file.
 - `*CacheStatus` shows whether the profile is configured locally and when the cache expires.
 
@@ -129,7 +113,7 @@ Useful commands:
 
 You can still use one-off URLs with `:DB`, `b:db`, `g:db`, or environment variables.
 Those flows are unchanged, but they are easier to leak into shell history or tracked config.
-For anything reusable, prefer the local profile file plus 1Password.
+For anything reusable, prefer the ignored local profile file.
 
 Examples:
 
@@ -171,6 +155,6 @@ To remove previously committed values from public history as well, use the runbo
 
 ## Notes
 
-- Keep credentials and real connection metadata out of the dotfiles repo.
+- Keep credentials and real connection metadata out of tracked dotfiles files.
 - Cached profile files are private local state, not repo-tracked config.
 - If completion is missing, verify the current SQL buffer has a valid database connection.
