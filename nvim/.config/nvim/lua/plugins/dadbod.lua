@@ -18,46 +18,29 @@ return {
     init = function()
       local uv = vim.uv or vim.loop
       local dadbod_state_dir = vim.fn.stdpath("state") .. "/dadbod"
+      local local_profile_config_path = vim.fn.stdpath("config") .. "/lua/local/dadbod_profiles.lua"
       local dbout_preview_group = vim.api.nvim_create_augroup("dadbod_ui_dbout_preview", { clear = true })
-      local cached_profiles = {
+      local managed_profiles = {
         {
           name = "redshift-dev",
-          url = "postgresql://db_user@127.0.0.1:4000/dev?sslmode=require",
-          host = "localhost",
-          port = "4000",
-          database = "dev",
-          user = "ben_griffiths",
           cache_ttl = 4 * 60 * 60,
-          password_prompt = "Redshift dev password: ",
           command_prefix = "RedshiftDev",
           command_label = "redshift-dev",
         },
         {
           name = "pep-brains",
-          url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
-          host = "db.example.internal",
-          port = "5432",
-          database = "app_db",
-          user = "postgres",
           cache_ttl = 7 * 24 * 60 * 60,
-          password_prompt = "pep-brains password: ",
           command_prefix = "PepBrains",
           command_label = "pep-brains",
         },
         {
           name = "dashboard-prod",
-          url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
-          host = "db.example.internal",
-          port = "5432",
-          database = "app_db",
-          user = "postgres",
           cache_ttl = 7 * 24 * 60 * 60,
-          password_prompt = "dashboard-prod password: ",
           command_prefix = "DashboardProd",
           command_label = "dashboard-prod",
         },
       }
-      local cached_profiles_by_name = {}
+      local managed_profiles_by_name = {}
 
       local function notify(message, level)
         vim.notify(message, level or vim.log.levels.INFO, { title = "Dadbod" })
@@ -104,6 +87,192 @@ return {
 
       local is_list = vim.islist or vim.tbl_islist
 
+      local function normalize_error_output(result, fallback)
+        local error_output = result.stderr
+        if error_output == nil or error_output == "" then
+          error_output = result.stdout or fallback or "Unknown error."
+        end
+
+        return vim.trim(error_output)
+      end
+
+      local function command_result(args, opts)
+        opts = opts or {}
+
+        if vim.system then
+          local env = nil
+          if opts.include_env and vim.fn.exists("*environ") == 1 then
+            env = vim.fn.environ()
+          end
+
+          if opts.env ~= nil then
+            env = vim.tbl_extend("force", env or {}, opts.env)
+          end
+
+          return vim.system(args, {
+            env = env,
+            text = true,
+          }):wait()
+        end
+
+        local original_env = {}
+        if opts.env ~= nil then
+          for key, value in pairs(opts.env) do
+            original_env[key] = vim.env[key]
+            vim.env[key] = value
+          end
+        end
+
+        local stdout = vim.fn.system(args)
+        local result = {
+          code = vim.v.shell_error,
+          stdout = stdout,
+          stderr = stdout,
+        }
+
+        if opts.env ~= nil then
+          for key, value in pairs(original_env) do
+            vim.env[key] = value
+          end
+        end
+
+        return result
+      end
+
+      local function load_local_profile_config()
+        if vim.fn.filereadable(local_profile_config_path) == 0 then
+          return nil, "Missing local Dadbod profile config at " .. local_profile_config_path .. "."
+        end
+
+        local ok, loaded = pcall(dofile, local_profile_config_path)
+        if not ok then
+          return nil, "Failed to load local Dadbod profile config at " .. local_profile_config_path .. ": " .. loaded
+        end
+
+        if type(loaded) ~= "table" then
+          return nil, "Local Dadbod profile config must return a table: " .. local_profile_config_path
+        end
+
+        return loaded
+      end
+
+      local function parse_postgres_url(url)
+        if type(url) ~= "string" or url == "" then
+          return nil, "Profile URL must be a non-empty string."
+        end
+
+        if not url:match("^postgresql?://") then
+          return nil, "Profile URL must start with postgresql:// or postgres://."
+        end
+
+        local authority, path_and_query = url:match("^postgresql?://([^/]+)(/.*)$")
+        if authority == nil or path_and_query == nil then
+          return nil, "Profile URL must include a host, user, and database."
+        end
+
+        local userinfo, hostport = authority:match("^(.-)@(.+)$")
+        if userinfo == nil or hostport == nil or userinfo == "" or hostport == "" then
+          return nil, "Profile URL must include a username and host."
+        end
+
+        if userinfo:find(":", 1, true) ~= nil then
+          return nil, "Do not include the password in the local Dadbod profile URL."
+        end
+
+        local host
+        local port
+        if hostport:sub(1, 1) == "[" then
+          host, port = hostport:match("^%[([^%]]+)%]:(%d+)$")
+          if host == nil then
+            host = hostport:match("^%[([^%]]+)%]$")
+          end
+        else
+          host, port = hostport:match("^([^:]+):(%d+)$")
+          if host == nil then
+            host = hostport
+          end
+        end
+
+        if host == nil or host == "" then
+          return nil, "Profile URL must include a host."
+        end
+
+        local database = path_and_query:match("^/([^?]+)")
+        if database == nil or database == "" then
+          return nil, "Profile URL must include a database name."
+        end
+
+        return {
+          url = url,
+          host = host,
+          port = port or "5432",
+          database = database,
+          user = userinfo,
+        }
+      end
+
+      local function apply_local_profile_config(profile, local_profiles, config_error)
+        profile.setup_error = config_error
+        profile.url = nil
+        profile.host = nil
+        profile.port = nil
+        profile.database = nil
+        profile.user = nil
+        profile.password_ref = nil
+
+        if config_error ~= nil then
+          return
+        end
+
+        local profile_config = local_profiles[profile.name]
+        if type(profile_config) ~= "table" then
+          profile.setup_error = "Missing `" .. profile.name .. "` in " .. local_profile_config_path .. "."
+          return
+        end
+
+        local parsed_url, parse_error = parse_postgres_url(profile_config.url)
+        if parsed_url == nil then
+          profile.setup_error = profile.name .. ": " .. parse_error
+          return
+        end
+
+        if type(profile_config.password_ref) ~= "string" or profile_config.password_ref == "" then
+          profile.setup_error = profile.name .. ": missing `password_ref`."
+          return
+        end
+
+        if not profile_config.password_ref:match("^op://") then
+          profile.setup_error = profile.name .. ": `password_ref` must be a 1Password secret reference."
+          return
+        end
+
+        profile.url = parsed_url.url
+        profile.host = parsed_url.host
+        profile.port = parsed_url.port
+        profile.database = parsed_url.database
+        profile.user = parsed_url.user
+        profile.password_ref = profile_config.password_ref
+        profile.setup_error = nil
+      end
+
+      local function read_secret_reference(secret_ref)
+        if vim.fn.executable("op") == 0 then
+          return nil, "1Password CLI (`op`) is not installed."
+        end
+
+        local result = command_result({ "op", "read", secret_ref })
+        if result.code ~= 0 then
+          return nil, "1Password lookup failed: " .. normalize_error_output(result, "Unable to read secret reference.")
+        end
+
+        local value = vim.trim(result.stdout or "")
+        if value == "" then
+          return nil, "1Password returned an empty secret for " .. secret_ref .. "."
+        end
+
+        return value
+      end
+
       local function pgpass_escape(value)
         return value:gsub("\\", "\\\\"):gsub(":", "\\:")
       end
@@ -140,7 +309,7 @@ return {
         dbui_reset_state()
 
         if not opts.silent then
-          notify("Cleared cached password for " .. profile.name .. ".", vim.log.levels.INFO)
+          notify("Cleared cached credentials for " .. profile.name .. ".", vim.log.levels.INFO)
         end
       end
 
@@ -155,7 +324,7 @@ return {
         profile.expiry_timer = uv.new_timer()
         profile.expiry_timer:start(delay, 0, vim.schedule_wrap(function()
           clear_profile_cache(profile, { silent = true })
-          notify("Password cache expired for " .. profile.name .. ".", vim.log.levels.INFO)
+          notify("Credential cache expired for " .. profile.name .. ".", vim.log.levels.INFO)
         end))
       end
 
@@ -209,6 +378,14 @@ return {
       end
 
       local function validate_profile_password(profile, password)
+        if profile.url == nil or profile.host == nil or profile.database == nil or profile.user == nil then
+          return false, profile.setup_error or "Profile is not configured locally."
+        end
+
+        if vim.fn.executable("psql") == 0 then
+          return false, "`psql` was not found on PATH."
+        end
+
         local temp_passfile = vim.fn.tempname()
         local result
 
@@ -223,46 +400,20 @@ return {
         }, temp_passfile)
         set_private_permissions(temp_passfile)
 
-        if vim.system then
-          local env = {}
-          if vim.fn.exists("*environ") == 1 then
-            env = vim.fn.environ()
-          end
-
-          result = vim.system({
-            "psql",
-            "-w",
-            "--no-psqlrc",
-            "--dbname",
-            profile.url,
-            "-tAc",
-            "select 1;",
-          }, {
-            env = vim.tbl_extend("force", env, {
-              PGPASSFILE = temp_passfile,
-            }),
-            text = true,
-          }):wait()
-        else
-          local original_pgpassfile = vim.env.PGPASSFILE
-
-          vim.env.PGPASSFILE = temp_passfile
-          local stdout = vim.fn.system({
-            "psql",
-            "-w",
-            "--no-psqlrc",
-            "--dbname",
-            profile.url,
-            "-tAc",
-            "select 1;",
-          })
-          result = {
-            code = vim.v.shell_error,
-            stdout = stdout,
-            stderr = stdout,
-          }
-          vim.env.PGPASSFILE = original_pgpassfile
-        end
+        result = command_result({
+          "psql",
+          "-w",
+          "--no-psqlrc",
+          "--dbname",
+          profile.url,
+          "-tAc",
+          "select 1;",
+        }, {
+          include_env = true,
+          env = {
+            PGPASSFILE = temp_passfile,
+          },
+        })
 
         vim.fn.delete(temp_passfile)
 
@@ -270,12 +421,7 @@ return {
           return true
         end
 
-        local error_output = result.stderr
-        if error_output == nil or error_output == "" then
-          error_output = result.stdout or "Unknown authentication error."
-        end
-
-        return false, vim.trim(error_output)
+        return false, normalize_error_output(result, "Unknown authentication error.")
       end
 
       local function store_profile_cache(profile, password)
@@ -295,7 +441,18 @@ return {
         return expires_at
       end
 
-      local function refresh_profile_cache(profile, password)
+      local function refresh_profile_cache(profile)
+        if profile.setup_error ~= nil then
+          clear_profile_runtime_auth(profile)
+          return false, profile.setup_error
+        end
+
+        local password, lookup_error = read_secret_reference(profile.password_ref)
+        if password == nil then
+          clear_profile_runtime_auth(profile)
+          return false, lookup_error
+        end
+
         local ok, error_output = validate_profile_password(profile, password)
         if not ok then
           clear_profile_runtime_auth(profile)
@@ -306,51 +463,33 @@ return {
         return true, expires_at
       end
 
-      local function prompt_for_profile_password(profile)
-        local password = vim.fn.inputsecret(profile.password_prompt)
-        if type(password) ~= "string" or password == "" then
-          return nil
-        end
-
-        return password
-      end
-
-      local function ensure_profile_cache(profile, opts)
-        opts = opts or {}
-
+      local function ensure_profile_cache(profile)
         local cached = read_profile_cache(profile)
         if cached ~= nil then
           apply_profile_runtime_auth(profile, cached.password, cached.expires_at)
           return true, "cached"
         end
 
-        if opts.prompt == false then
-          return false, "missing"
-        end
-
-        local password = prompt_for_profile_password(profile)
-        if password == nil then
-          clear_profile_runtime_auth(profile)
-          return false, "cancelled"
-        end
-
-        local ok, result = refresh_profile_cache(profile, password)
+        local ok, result = refresh_profile_cache(profile)
         if not ok then
-          notify("Authentication failed for " .. profile.name .. ": " .. result, vim.log.levels.ERROR)
-          return false, "failed"
+          return false, result
         end
 
         notify(
-          "Cached password for " .. profile.name .. " until " .. os.date("%Y-%m-%d %H:%M:%S", result) .. ".",
+          "Cached credentials for " .. profile.name .. " until " .. os.date("%Y-%m-%d %H:%M:%S", result) .. ".",
           vim.log.levels.INFO
         )
-        return true, "prompted"
+        return true, "refreshed"
       end
 
       local function profile_status_message(profile)
+        if profile.setup_error ~= nil then
+          return profile.setup_error
+        end
+
         local cached = read_profile_cache(profile)
         if cached == nil then
-          return "No cached password for " .. profile.name .. "."
+          return "No cached credentials for " .. profile.name .. "."
         end
 
         local seconds_remaining = math.max(0, cached.expires_at - os.time())
@@ -359,7 +498,7 @@ return {
         local remaining_minutes = minutes_remaining % 60
 
         return string.format(
-          "Cached password for %s expires at %s (%dh %02dm remaining).",
+          "Cached credentials for %s expire at %s (%dh %02dm remaining).",
           profile.name,
           os.date("%Y-%m-%d %H:%M:%S", cached.expires_at),
           hours_remaining,
@@ -420,21 +559,21 @@ return {
           return
         end
 
-        _G.__dadbod_cached_profile_ensure_cache = function(args)
-          local profile = cached_profiles_by_name[args[1]]
+        _G.__dadbod_cached_profile_ensure_cache = function(profile_name)
+          local profile = managed_profiles_by_name[profile_name]
           if profile == nil then
             return {
               handled = false,
               ok = true,
-              reason = "unmanaged",
+              message = "",
             }
           end
 
-          local ok, reason = ensure_profile_cache(profile, { prompt = args[2] })
+          local ok, message = ensure_profile_cache(profile)
           return {
             handled = true,
             ok = ok,
-            reason = reason,
+            message = ok and "" or message,
           }
         end
 
@@ -447,13 +586,11 @@ return {
               let g:dadbod_cached_profile_dbui._cached_profile_connect_patched = 1
 
               function! g:dadbod_cached_profile_dbui.connect(db) dict abort
-                let l:auth = luaeval('__dadbod_cached_profile_ensure_cache(_A)', [get(a:db, 'name', ''), v:true])
+                let l:auth = luaeval('__dadbod_cached_profile_ensure_cache(_A)', get(a:db, 'name', ''))
                 if get(l:auth, 'handled', v:false) && !get(l:auth, 'ok', v:false)
                   let a:db.conn = ''
-                  let a:db.conn_error = get(l:auth, 'reason', '') ==# 'failed'
-                        \ ? 'Authentication failed for ' . get(a:db, 'name', '') . '.'
-                        \ : ''
-                  let a:db.conn_tried = get(l:auth, 'reason', '') ==# 'failed' ? 1 : 0
+                  let a:db.conn_error = get(l:auth, 'message', 'Unable to resolve credentials.')
+                  let a:db.conn_tried = 1
                   redraw!
                   return a:db
                 endif
@@ -467,39 +604,38 @@ return {
         ]])
       end
 
-      for _, profile in ipairs(cached_profiles) do
+      local local_profiles, local_config_error = load_local_profile_config()
+
+      for _, profile in ipairs(managed_profiles) do
         profile.cache_path = dadbod_state_dir .. "/" .. profile.name .. "-cache.json"
         profile.passfile_path = dadbod_state_dir .. "/" .. profile.name .. ".pgpass"
         profile.expiry_timer = nil
-        cached_profiles_by_name[profile.name] = profile
-        add_dbui_profile(profile.name, profile.url)
-        prime_profile_expiry_timer(profile)
+        apply_local_profile_config(profile, local_profiles or {}, local_config_error)
+        managed_profiles_by_name[profile.name] = profile
+        if profile.setup_error == nil then
+          add_dbui_profile(profile.name, profile.url)
+          prime_profile_expiry_timer(profile)
+        end
 
         create_or_replace_user_command(profile.command_prefix .. "Login", function()
-          local password = prompt_for_profile_password(profile)
-          if password == nil then
-            notify("Skipped refreshing cached password for " .. profile.name .. ".", vim.log.levels.INFO)
-            return
-          end
-
-          local ok, result = refresh_profile_cache(profile, password)
+          local ok, result = refresh_profile_cache(profile)
           if not ok then
-            notify("Authentication failed for " .. profile.name .. ": " .. result, vim.log.levels.ERROR)
+            notify("Failed to refresh " .. profile.name .. ": " .. result, vim.log.levels.ERROR)
             return
           end
 
           notify(
-            "Cached password for " .. profile.name .. " until " .. os.date("%Y-%m-%d %H:%M:%S", result) .. ".",
+            "Cached credentials for " .. profile.name .. " until " .. os.date("%Y-%m-%d %H:%M:%S", result) .. ".",
             vim.log.levels.INFO
           )
         end, {
-          desc = "Refresh the cached password for " .. profile.command_label,
+          desc = "Fetch credentials from 1Password for " .. profile.command_label,
         })
 
         create_or_replace_user_command(profile.command_prefix .. "Logout", function()
           clear_profile_cache(profile)
         end, {
-          desc = "Clear the cached password for " .. profile.command_label,
+          desc = "Clear the cached credentials for " .. profile.command_label,
         })
 
         create_or_replace_user_command(profile.command_prefix .. "CacheStatus", function()

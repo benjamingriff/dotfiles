@@ -1,2 +1,5 @@
 tmux/.config/tmux/plugins/
 .claude/
+.nvimlog
+.git-history-scrub
+nvim/.config/nvim/lua/local/dadbod_profiles.lua
