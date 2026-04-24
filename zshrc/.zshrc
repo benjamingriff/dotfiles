@@ -36,7 +36,7 @@ alias opo="cd ~/repos/vault"
 
 export PATH="/opt/homebrew/opt/openjdk@11/bin:$PATH"
 export GOPATH=$HOME/go
-export PATH="$(go env GOPATH)/bin:$PATH"
+export PATH="$PATH:$(go env GOPATH)/bin"
 
 # bun completions
 [ -s "/Users/benjamingriffiths/.bun/_bun" ] && source "/Users/benjamingriffiths/.bun/_bun"

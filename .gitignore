@@ -3,3 +3,4 @@ tmux/.config/tmux/plugins/
 .nvimlog
 .git-history-scrub
 nvim/.config/nvim/lua/local/dadbod_profiles.lua
+.opencode/
