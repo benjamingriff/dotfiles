@@ -4,3 +4,4 @@ tmux/.config/tmux/plugins/
 .git-history-scrub
 nvim/.config/nvim/lua/local/dadbod_profiles.lua
 .opencode/
+bin/.bin/rs-ssm.env
