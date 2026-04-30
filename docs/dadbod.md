@@ -13,11 +13,11 @@ The plugins are command-driven. No new keymaps are added.
 - `:DB` is available for ad hoc commands and buffer-local connections.
 - `:DBUI` and `:DBUIToggle` open the Dadbod UI drawer.
 - `nvim-cmp` includes Dadbod completions for `sql`, `mysql`, and `plsql` buffers.
-- Public profile labels remain stable for `redshift-dev`, `pep-brains`, and `dashboard-prod`.
+- Public profile labels remain stable for `redshift-dev`, `pep-brains`, `us-dash`, and `dashboard-prod`.
 - Real connection URLs are loaded from a local file at `stdpath("config") .. "/lua/local/dadbod_profiles.lua"`.
 - Passwords are prompted on demand and cached in Neovim state with owner-only permissions.
 - `redshift-dev` keeps its cache for 4 hours.
-- `pep-brains` and `dashboard-prod` keep their caches for 7 days.
+- `pep-brains`, `us-dash`, and `dashboard-prod` keep their caches for 7 days.
 - Saved DBUI queries live under `stdpath("data") .. "/db_ui"`.
 - Postgres views are disabled in DBUI because Redshift requires `g:db_ui_use_postgres_views = 0`.
 - Dadbod result previews (`.dbout`) are resized to about 40% of the editor height when they open.
@@ -46,6 +46,9 @@ return {
   },
   ["pep-brains"] = {
     url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
+  },
+  ["us-dash"] = {
+    url = "postgresql://db_user@db.example.internal:5432/postgres?sslmode=require",
   },
 }
 ```
@@ -97,6 +100,9 @@ Useful commands:
 :PepBrainsLogin
 :PepBrainsLogout
 :PepBrainsCacheStatus
+:UsDashLogin
+:UsDashLogout
+:UsDashCacheStatus
 :DashboardProdLogin
 :DashboardProdLogout
 :DashboardProdCacheStatus

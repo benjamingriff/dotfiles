@@ -34,6 +34,12 @@ return {
           command_label = "pep-brains",
         },
         {
+          name = "us-dash",
+          cache_ttl = 7 * 24 * 60 * 60,
+          command_prefix = "UsDash",
+          command_label = "us-dash",
+        },
+        {
           name = "dashboard-prod",
           cache_ttl = 7 * 24 * 60 * 60,
           command_prefix = "DashboardProd",

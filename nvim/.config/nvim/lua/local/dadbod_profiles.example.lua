@@ -5,6 +5,9 @@ return {
   ["pep-brains"] = {
     url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
   },
+  ["us-dash"] = {
+    url = "postgresql://db_user@db.example.internal:5432/postgres?sslmode=require",
+  },
   ["dashboard-prod"] = {
     url = "postgresql://db_user@db.example.internal:5432/app_db?sslmode=require",
   },
