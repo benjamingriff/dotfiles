@@ -19,6 +19,7 @@ PACKAGES=(
   goose
   nvim
   opencode
+  pi
   sketchybar
   skhd
   starship

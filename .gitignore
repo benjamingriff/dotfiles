@@ -5,3 +5,9 @@ tmux/.config/tmux/plugins/
 nvim/.config/nvim/lua/local/dadbod_profiles.lua
 .opencode/
 bin/.bin/rs-ssm.env
+
+# Pi local/secrets/session state (do not commit)
+pi/.pi/agent/auth.json
+pi/.pi/agent/sessions/
+pi/.pi/agent/git/
+pi/.pi/agent/npm/
