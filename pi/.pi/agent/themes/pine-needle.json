@@ -1,0 +1,83 @@
+{
+  "$schema": "https://raw.githubusercontent.com/badlogic/pi-mono/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+  "name": "pine-needle",
+  "vars": {
+    "base": "#111111",
+    "panel": "#1f1d2e",
+    "element": "#26233a",
+    "border": "#403d52",
+    "text": "#e0def4",
+    "muted": "#6e6a86",
+    "subtle": "#908caa",
+    "love": "#eb6f92",
+    "gold": "#f6c177",
+    "rose": "#ebbcba",
+    "pine": "#3e9fb0",
+    "foam": "#9ccfd8",
+    "iris": "#c4a7e7"
+  },
+  "colors": {
+    "accent": "pine",
+    "border": "border",
+    "borderAccent": "subtle",
+    "borderMuted": "border",
+    "success": "pine",
+    "error": "love",
+    "warning": "gold",
+    "muted": "muted",
+    "dim": "muted",
+    "text": "text",
+    "thinkingText": "subtle",
+
+    "selectedBg": "element",
+    "userMessageBg": "panel",
+    "userMessageText": "text",
+    "customMessageBg": "panel",
+    "customMessageText": "text",
+    "customMessageLabel": "iris",
+    "toolPendingBg": "panel",
+    "toolSuccessBg": "panel",
+    "toolErrorBg": "panel",
+    "toolTitle": "foam",
+    "toolOutput": "subtle",
+
+    "mdHeading": "iris",
+    "mdLink": "rose",
+    "mdLinkUrl": "foam",
+    "mdCode": "pine",
+    "mdCodeBlock": "foam",
+    "mdCodeBlockBorder": "subtle",
+    "mdQuote": "muted",
+    "mdQuoteBorder": "border",
+    "mdHr": "border",
+    "mdListBullet": "foam",
+
+    "toolDiffAdded": "foam",
+    "toolDiffRemoved": "love",
+    "toolDiffContext": "muted",
+
+    "syntaxComment": "muted",
+    "syntaxKeyword": "pine",
+    "syntaxFunction": "foam",
+    "syntaxVariable": "text",
+    "syntaxString": "gold",
+    "syntaxNumber": "rose",
+    "syntaxType": "iris",
+    "syntaxOperator": "subtle",
+    "syntaxPunctuation": "subtle",
+
+    "thinkingOff": "border",
+    "thinkingMinimal": "muted",
+    "thinkingLow": "pine",
+    "thinkingMedium": "foam",
+    "thinkingHigh": "iris",
+    "thinkingXhigh": "love",
+
+    "bashMode": "gold"
+  },
+  "export": {
+    "pageBg": "base",
+    "cardBg": "panel",
+    "infoBg": "element"
+  }
+}
