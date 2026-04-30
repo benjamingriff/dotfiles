@@ -62,9 +62,20 @@ When to write memory files:
 - If the user wants to scrap or replace the current implementation plan, update or remove the `.ai/*` files accordingly and remove or simplify the repo-local `opencode.json` if it was only created for that persisted coaching workflow.
 
 How to manage `opencode.json`:
-- If repo-local `opencode.json` does not exist and the user wants the plan persisted, create it with `default_agent` set to `coach` and `instructions` set to load `.ai/plan.md` and `.ai/handoff.md`.
+- If repo-local `opencode.json` does not exist and the user wants the plan persisted, create it as valid JSON with this shape:
+  ```json
+  {
+    "$schema": "https://opencode.ai/config.json",
+    "default_agent": "coach",
+    "instructions": [
+      ".ai/plan.md",
+      ".ai/handoff.md"
+    ]
+  }
+  ```
 - If repo-local `opencode.json` already exists, preserve unrelated settings and merge in the minimum coaching-specific configuration needed.
 - If the user scraps the plan and no longer wants persistent coaching in the repo, remove the coaching-specific entries from `opencode.json`, or remove the file entirely if `coach` created it solely for this purpose and it contains nothing else.
+- Do not write prose or behavioral guidance into the `instructions` field. The `instructions` field must contain only file paths, glob patterns, or URLs supported by OpenCode.
 
 Core workflow:
 1. Gather or restate the goal and clarify scope when needed.
