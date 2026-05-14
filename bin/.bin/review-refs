@@ -16,11 +16,5 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
   exit 1
 }
 
-export PR_REVIEW_REPO_ROOT="$repo_root"
-export PR_REVIEW_BASE_REF="$base_ref"
-export PR_REVIEW_HEAD_REF="$head_ref"
-export PR_REVIEW_BASE_LABEL="${PR_REVIEW_BASE_LABEL:-$base_ref}"
-export PR_REVIEW_HEAD_LABEL="${PR_REVIEW_HEAD_LABEL:-$head_ref}"
-
 cd "$repo_root"
-git diff --find-renames "$base_ref...$head_ref" "$@" | env EDITOR=review-open-file diffnav -s
+git diff --find-renames --no-color "$base_ref...$head_ref" "$@" | hunk patch -
