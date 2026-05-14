@@ -1,4 +1,5 @@
 alt - s : open -a "Slack"
+alt - n : open -a "Notion"
 alt - z : open -a "Zen"
 alt + shift - d : open -a "Dash"
 alt - g : open -a "Ghostty"
@@ -29,7 +30,3 @@ alt - m : yabai -m window --minimize
 alt - f : yabai -m window --toggle windowed-fullscreen
 
 cmd + alt - t : open -a "Zen" "https://t3.chat"
-
-cmd + alt - a : open "slack://channel?team=T07E209V16D&id=D08BG6KBUKU"
-cmd + alt - i : open "slack://channel?team=T07E209V16D&id=D07EXASKJVA"
-cmd + alt - k : open "slack://channel?team=T07E209V16D&id=D08B44KGUG7"
