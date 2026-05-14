@@ -13,10 +13,11 @@ fi
 
 PACKAGES=(
   bin
-  diffnav
   ghostty
   gh-dash
   goose
+  hunk
+  lazygit
   nvim
   opencode
   pi

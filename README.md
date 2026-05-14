@@ -3,6 +3,8 @@
 This repository contains a managed collection of dotfiles and configuration files for macOS, organized with [GNU Stow](https://www.gnu.org/software/stow/).
 The goal is to keep everything modular, reproducible, and easy to set up on a new machine.
 
+Here are some changes so I can inpect with hunk...
+
 ---
 
 ## 📂 Repository Structure
@@ -117,6 +119,6 @@ PR review docs live under `docs/review/`.
 - `docs/sqlfluff.md`
 - `docs/rs-ssm.md`
 
-These docs cover the terminal-first workflow built around `gh-dash`, `diffnav`, `tmux`, and `nvim -d`, plus the optional Neovim-native GitHub flow via `snacks.nvim`.
+These docs cover the terminal-first workflow built around `gh-dash` and Hunk, plus the optional Neovim-native GitHub flow via `snacks.nvim`.
 
 ─────────────────────────────────────────
