@@ -2,9 +2,17 @@
 
 ## `gh-dash`
 
-- `D`: review selected PR in `diffnav`
+- `D`: review selected PR in Hunk
 - `G`: open `lazygit` in the repo
 - `O`: checkout selected PR
+
+## Hunk
+
+- Used for PR diffs launched from `gh-dash`
+- Used as the Git pager via `hunk pager`
+- Local review command: `review-refs main HEAD`
+- Working tree review: `hunk diff`
+- Latest commit review: `hunk show`
 
 ## `snacks.nvim`
 
@@ -29,34 +37,19 @@
 - `<leader>tb`: toggle current-line blame
 - `<leader>tw`: toggle word diff
 
-## `diffnav`
-
-- `j` / `k`: move between files or nodes
-- `n` / `p`: next or previous file
-- `e`: toggle file tree
-- `t`: search files
-- `s`: toggle side-by-side or unified
-- `o`: open full-file compare for the selected file
-- `q`: quit
-
-## Full-file compare
-
-- `o` from `diffnav` opens a new `tmux` window with `nvim -d`
-- quit `nvim`, close the compare window, and return to the same `diffnav` session
-
-Direct commands:
+## Direct commands
 
 ```bash
 gh-pr-review owner/repo 123
 review-refs main HEAD
-review-file-compare main HEAD path/to/file.ts
+hunk diff
+hunk show HEAD
 ```
 
 ## Use This When
 
 - `gh-dash`: triage, approval, quick comments
+- Hunk: changed-code review
 - `snacks.nvim`: Neovim-native GitHub search, PR details, review actions
-- `diffnav`: changed-code review
 - `gitsigns.nvim`: current-file branch comparison with live signs
-- `nvim -d`: full-file structure or type-heavy review
 - local checkout: tests, logging, runtime validation
