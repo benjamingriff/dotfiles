@@ -1,0 +1,4 @@
+git:
+  paging:
+    pager: hunk pager
+    colorArg: always
