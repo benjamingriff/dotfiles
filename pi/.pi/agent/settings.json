@@ -1,0 +1,19 @@
+{
+  "lastChangelogVersion": "0.75.3",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.5",
+  "defaultThinkingLevel": "low",
+  "theme": "pine-needle",
+  "hideThinkingBlock": false,
+  "quietStartup": true,
+  "welcomeMessage": {
+    "sections": ["nodePackage", "git", "piResources"],
+    "showOnNewSession": true,
+    "showLogo": false
+  },
+  "packages": [
+    "npm:@ollama/pi-web-search",
+    "npm:@eko24ive/pi-ask",
+    "npm:@fgladisch/pi-welcome-message"
+  ]
+}
