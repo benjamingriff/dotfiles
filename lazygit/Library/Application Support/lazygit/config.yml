@@ -2,3 +2,6 @@ git:
   paging:
     pager: hunk pager
     colorArg: always
+  branchLogCmd: git --no-pager log --graph --color=always --abbrev-commit --decorate --date=relative --pretty=medium {{branchName}} --
+  allBranchesLogCmds:
+    - git --no-pager log --graph --all --color=always --abbrev-commit --decorate --date=relative --pretty=medium
