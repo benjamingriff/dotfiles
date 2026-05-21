@@ -17,7 +17,6 @@
   },
   "packages": [
     "npm:@ollama/pi-web-search",
-    "npm:@eko24ive/pi-ask",
     "npm:@fgladisch/pi-welcome-message",
     "npm:@narumitw/pi-btw"
   ],
