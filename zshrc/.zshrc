@@ -14,6 +14,10 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^x' edit-command-line
+
 export PATH="/opt/homebrew/bin:$PATH"
 
 export VISUAL="nvim"
@@ -25,16 +29,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 eval "$(starship init zsh)"
-
-# Treat Option-Backspace / Ctrl-Backspace as "delete previous word".
-# Without these bindings, Option-Backspace can be interpreted as Escape + Backspace,
-# which drops zsh into vi command mode and makes starship show the vicmd prompt.
-bindkey -M emacs '^[^?' backward-kill-word
-bindkey -M emacs '^[^H' backward-kill-word
-bindkey -M viins '^[^?' vi-backward-kill-word
-bindkey -M viins '^[^H' vi-backward-kill-word
-bindkey -M vicmd '^[^?' vi-backward-kill-word
-bindkey -M vicmd '^[^H' vi-backward-kill-word
+bindkey -e
 
 alias dotfiles="nvim ~/repos/dotfiles/"
 alias wd="cd ~/pep-repos"
