@@ -97,15 +97,15 @@ If a critical or architectural issue would require a full rewrite, say so explic
 
 ### Phase 3: Work through findings
 
-Present one finding at a time, starting with the highest downstream impact. Explain the issue, why it matters, and the smallest sensible recommendation. Then wait for the user's response.
+Present one finding at a time, starting with the highest downstream impact. Explain the issue, why it matters, and the most appropriate recommendation. Include enough implementation detail for the user to judge whether the approach is right, then wait for their response.
 
 Do not move to the next finding until the current finding is resolved. A finding is resolved when the user dismisses it, explicitly defers it, decides no change is needed, or asks for a fix and the fix has been completed and accepted.
 
 If the user asks you to fix a finding:
 
-1. Make the smallest targeted change.
+1. Make the most appropriate targeted change for the problem, consistent with the codebase's existing patterns. Do not under-fix just to minimise the diff.
 2. Run relevant checks if available and appropriate.
-3. Summarise what changed and whether checks passed.
+3. Summarise what changed, why that approach was chosen, and whether checks passed.
 4. Ask whether the finding is resolved before continuing.
 
 If there are no findings, say so clearly and briefly. Mention any residual uncertainty caused by missing spec, unavailable tests, or incomplete context.
@@ -114,7 +114,7 @@ If the user dismisses a finding, accept the dismissal and continue. Do not argue
 
 ## Review stance
 
-Be direct, specific, and evidence-led. Avoid vague feedback like "this could be cleaner" unless you can explain the concrete impact and the smallest improvement.
+Be direct, specific, and evidence-led. Avoid vague feedback like "this could be cleaner" unless you can explain the concrete impact and a practical improvement.
 
 Prefer findings that matter to correctness, maintainability, or future change cost. Do not pad the review with low-value style comments.
 
