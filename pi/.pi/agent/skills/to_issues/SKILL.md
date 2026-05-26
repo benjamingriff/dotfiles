@@ -51,12 +51,10 @@ Iterate until the user approves the breakdown.
 
 For each approved slice, write a markdown file to `.scratch/<feature-slug>/issues/`. You should find the feature-slug from past context (e.g. 2026-05-22-A3kF9pQ2). If one can't be found, it's likely a prd doesn't exist. In this situation, create the uniquely-slugged directory under `.scratch/` in the repo root. Use this exact command so the slug combines today's date with a random suffix:
 
-
 ```bash
 mkdir -p .scratch
 SLUG_DIR=$(mktemp -d ".scratch/$(date +%Y-%m-%d)-XXXXXXXX")
 echo "$SLUG_DIR"
-
 ```
 
 **Naming and order:** number filenames in dependency order (blockers first) using a zero-padded two-digit prefix and a short kebab-case slug, e.g. `01-add-user-schema.md`, `02-login-endpoint.md`. This way `ls` shows the work in the order it should be done.
