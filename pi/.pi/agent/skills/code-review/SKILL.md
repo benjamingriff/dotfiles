@@ -105,7 +105,7 @@ If the user asks you to fix a finding:
 
 1. Make the most appropriate targeted change for the problem, consistent with the codebase's existing patterns. Do not under-fix just to minimise the diff.
 2. Run relevant checks if available and appropriate.
-3. Summarise what changed, why that approach was chosen, and whether checks passed.
+3. Summarise what changed, why that approach was chosen, and whether checks passed. Include easy-to-find references such as file names, line numbers, relevant function signatures, and test names changed.
 4. Ask whether the finding is resolved before continuing.
 
 If there are no findings, say so clearly and briefly. Mention any residual uncertainty caused by missing spec, unavailable tests, or incomplete context.
