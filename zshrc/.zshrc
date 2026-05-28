@@ -16,7 +16,6 @@ unset __conda_setup
 
 autoload -Uz edit-command-line
 zle -N edit-command-line
-bindkey '^x' edit-command-line
 
 export PATH="/opt/homebrew/bin:$PATH"
 
@@ -30,6 +29,7 @@ export NVM_DIR="$HOME/.nvm"
 
 eval "$(starship init zsh)"
 bindkey -e
+bindkey '^x' edit-command-line
 
 alias dotfiles="nvim ~/repos/dotfiles/"
 alias wd="cd ~/pep-repos"
