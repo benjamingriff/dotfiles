@@ -6,6 +6,10 @@ nvim/.config/nvim/lua/local/dadbod_profiles.lua
 .opencode/
 bin/.bin/rs-ssm.env
 
+# Work files
+bin/.bin/v4_dev.sh
+bin/.bin/v4_staging.sh
+
 # Pi local/secrets/session state (do not commit)
 pi/.pi/agent/auth.json
 pi/.pi/agent/sessions/
