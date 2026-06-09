@@ -35,8 +35,10 @@ return {
         },
       })
 
-      -- If "ruff" server is available (via nvim-lspconfig), defaults are fine.
-      -- Only add vim.lsp.config("ruff", { ... }) if you need overrides.
+      -- Python LSPs:
+      -- - ruff handles linting/code actions
+      -- - pyright provides richer Python language intelligence
+      -- - ty is enabled as an additional/experimental type checker
 
       -- 3) Custom server you defined ('ty') stays as-is
       vim.lsp.config("ty", {
@@ -49,6 +51,7 @@ return {
       vim.lsp.enable({
         "lua_ls",
         "ruff",
+        "pyright",
         "eslint",
         "ty",
       })

@@ -1,17 +1,37 @@
+local parsers = {
+  "lua",
+  "python",
+  "go",
+  "javascript",
+  "html",
+  "css",
+  "sql",
+  "markdown",
+  "markdown_inline",
+}
+
 return {
   "nvim-treesitter/nvim-treesitter",
-  build = ":TSUpdate",
+  branch = "main",
+  lazy = false,
+  build = function()
+    require("nvim-treesitter").install(parsers)
+  end,
   config = function()
-    require("nvim-treesitter.configs").setup({
-      ensure_installed = { "lua", "python", "go", "javascript", "html", "css", "sql" },
-      highlight = {
-        enable = true,
-        additional_vim_regex_highlighting = false,
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = {
+        "lua",
+        "python",
+        "go",
+        "javascript",
+        "html",
+        "css",
+        "sql",
+        "markdown",
       },
-      indent = {
-        enable = true,
-        -- disable = { "go" }, -- uncomment if Go indent misbehaves
-      },
+      callback = function()
+        vim.treesitter.start()
+      end,
     })
   end,
 }

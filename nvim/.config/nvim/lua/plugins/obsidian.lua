@@ -10,11 +10,7 @@ return {
     workspaces = {
       {
         name = "vault",
-        path = "~/repos/vault",
-      },
-      {
-        name = "open-vault",
-        path = "~/repos/open-vault",
+        path = "~/oss-repos/dotfiles",
       },
     },
   },
