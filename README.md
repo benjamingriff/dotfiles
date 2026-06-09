@@ -40,6 +40,16 @@ Then run the install script to stow all packages:
 
 This will symlink everything into the correct locations under $HOME.
 
+### Neovim prerequisites
+
+This config uses `nvim-treesitter` on its `main` branch, which requires the `tree-sitter` CLI to install/compile parsers such as Python:
+
+```bash
+npm install -g tree-sitter-cli
+```
+
+Without this, Python files may open with no Treesitter syntax highlighting, and `:checkhealth nvim-treesitter` will report `tree-sitter-cli not found`.
+
 ─────────────────────────────────────────
 
 ## 🔧 Managing Packages
