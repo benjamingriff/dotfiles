@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+workspace="${1:?workspace required}"
+bundle_id="${2:?bundle id required, or '-' to match by app name}"
+app_name="${3:?app name required}"
+shift 3
+
+window_count=0
+if [[ "$bundle_id" != "-" ]]; then
+  window_count="$(aerospace list-windows --all --app-bundle-id "$bundle_id" --count 2>/dev/null || echo 0)"
+else
+  window_count="$(aerospace list-windows --all --format '%{app-name}' 2>/dev/null | grep -Fxc "$app_name" || true)"
+fi
+
+# Always go to the workspace. Only launch/reopen the app if AeroSpace cannot see
+# any windows for it. Re-running `open -a` on every keypress can trigger odd
+# app-specific behaviour, especially for Electron apps like Slack.
+aerospace workspace "$workspace"
+
+if [[ "${window_count:-0}" -eq 0 ]]; then
+  if [[ "$bundle_id" != "-" ]]; then
+    open -b "$bundle_id" "$@" || open -a "$app_name" "$@"
+  else
+    open -a "$app_name" "$@"
+  fi
+fi

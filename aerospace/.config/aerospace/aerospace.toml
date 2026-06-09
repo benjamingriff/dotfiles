@@ -1,0 +1,111 @@
+# AeroSpace config converted from skhd/yabai dotfiles.
+# https://nikitabobko.github.io/AeroSpace/guide
+
+config-version = 2
+
+# Startup / reload behavior
+after-startup-command = []
+start-at-login = true
+
+# Tiling behavior: yabai was using bsp with second_child placement and no auto-balance.
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+accordion-padding = 30
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+on-focused-monitor-changed = []
+automatically-unhide-macos-hidden-apps = false
+
+# Keep app-oriented workspaces alive, even before their apps have windows.
+persistent-workspaces = ['zen', 'ghostty', 'notion', 'slack', 'dbeaver', 'teams', 'outlook']
+
+
+[key-mapping]
+    preset = 'qwerty'
+
+# Consistent padding on all sides, plus a small gap between windows.
+[gaps]
+    inner.horizontal = 6
+    inner.vertical = 6
+    outer.top = 4
+    outer.bottom = 4
+    outer.left = 4
+    outer.right = 4
+
+[mode.main.binding]
+    # App workspace shortcuts. Each one switches to the persistent workspace and
+    # opens/focuses the app there. If the app is already open, `open -a` just activates it.
+    alt-s = 'exec-and-forget /bin/bash -lc "aerospace workspace slack; open -a Slack"'
+    alt-n = 'exec-and-forget /bin/bash -lc "aerospace workspace notion; open -a Notion"'
+    alt-z = 'exec-and-forget /bin/bash -lc "aerospace workspace zen; open -a Zen"'
+    alt-g = 'exec-and-forget /bin/bash -lc "aerospace workspace ghostty; open -a Ghostty"'
+    alt-o = 'exec-and-forget /bin/bash -lc "aerospace workspace outlook; open -a \"Microsoft Outlook\""'
+    alt-t = 'exec-and-forget /bin/bash -lc "aerospace workspace teams; open -a \"Microsoft Teams\""'
+    alt-d = 'exec-and-forget /bin/bash -lc "aerospace workspace dbeaver; open -a DBeaver"'
+    alt-shift-d = 'exec-and-forget open -a Dash'
+    alt-shift-f = 'exec-and-forget open -a Finder'
+    cmd-alt-t = 'exec-and-forget /bin/bash -lc "aerospace workspace zen; open -a Zen https://t3.chat"'
+
+    # Focus windows, converted from yabai directions.
+    alt-h = 'focus left'
+    alt-j = 'focus down'
+    alt-k = 'focus up'
+    alt-l = 'focus right'
+
+    # Direct workspace navigation, no shift required.
+    alt-1 = 'workspace zen'
+    alt-2 = 'workspace ghostty'
+    alt-3 = 'workspace notion'
+    alt-4 = 'workspace slack'
+    alt-5 = 'workspace dbeaver'
+    alt-6 = 'workspace teams'
+    alt-7 = 'workspace outlook'
+
+    # Window actions from skhd/yabai.
+    alt-q = 'close'
+    alt-m = 'macos-native-minimize'
+    alt-f = 'fullscreen'
+
+# Float apps/dialogs that yabai excluded from management.
+[[on-window-detected]]
+    if.app-name-regex-substring = 'Software Update|Dictionary|VLC|System Preferences|System Settings|zoom\.us|Photo Booth|Archive Utility|App Store|Activity Monitor'
+    run = 'layout floating'
+
+[[on-window-detected]]
+    if.app-id = 'com.apple.finder'
+    if.window-title-regex-substring = 'Co(py|nnect)|Move|Info|Pref'
+    run = 'layout floating'
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'System Information'
+    if.window-title-regex-substring = 'About This Mac'
+    run = 'layout floating'
+
+# App-to-workspace assignments.
+[[on-window-detected]]
+    if.app-id = 'app.zen-browser.zen'
+    run = 'move-node-to-workspace zen'
+
+[[on-window-detected]]
+    if.app-id = 'com.mitchellh.ghostty'
+    run = 'move-node-to-workspace ghostty'
+
+[[on-window-detected]]
+    if.app-id = 'notion.id'
+    run = 'move-node-to-workspace notion'
+
+[[on-window-detected]]
+    if.app-id = 'com.tinyspeck.slackmacgap'
+    run = 'move-node-to-workspace slack'
+
+[[on-window-detected]]
+    if.app-name-regex-substring = 'DBeaver'
+    run = 'move-node-to-workspace dbeaver'
+
+[[on-window-detected]]
+    if.app-id = 'com.microsoft.teams2'
+    run = 'move-node-to-workspace teams'
+
+[[on-window-detected]]
+    if.app-id = 'com.microsoft.Outlook'
+    run = 'move-node-to-workspace outlook'
