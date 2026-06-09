@@ -15,3 +15,5 @@ pi/.pi/agent/auth.json
 pi/.pi/agent/sessions/
 pi/.pi/agent/git/
 pi/.pi/agent/npm/
+
+pi/.pi/agent/bin
