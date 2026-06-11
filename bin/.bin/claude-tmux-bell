@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Ring the tmux pane bell for Claude Code hook notifications.
+# Claude hooks inherit TMUX/TMUX_PANE from the pane Claude Code is running in.
+
+set -euo pipefail
+
+if [[ -z "${TMUX:-}" || -z "${TMUX_PANE:-}" ]]; then
+  exit 0
+fi
+
+# Debounce duplicate hook firings for the same pane.
+debounce_file="${TMPDIR:-/tmp}/claude-tmux-bell.${TMUX_PANE//[^A-Za-z0-9_.-]/_}"
+now="$(date +%s)"
+last="0"
+if [[ -f "$debounce_file" ]]; then
+  last="$(cat "$debounce_file" 2>/dev/null || printf '0')"
+fi
+
+if [[ "$last" =~ ^[0-9]+$ ]] && (( now - last < 1 )); then
+  exit 0
+fi
+printf '%s' "$now" > "$debounce_file"
+
+pane_tty="$(tmux display-message -p -t "$TMUX_PANE" '#{pane_tty}' 2>/dev/null || true)"
+if [[ -z "$pane_tty" || ! -w "$pane_tty" ]]; then
+  exit 0
+fi
+
+# BEL triggers tmux's activity/bell indicator for the pane/window when it is not active.
+printf '\a' > "$pane_tty"
