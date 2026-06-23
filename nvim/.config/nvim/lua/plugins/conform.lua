@@ -32,6 +32,7 @@ return {
     },
     opts = {
       formatters_by_ft = {
+        dbt = { "sqlfluff" },
         javascript = { "prettier" },
         json = { "prettier" },
         mysql = { "sqlfluff" },

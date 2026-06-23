@@ -38,7 +38,7 @@ Add one of the following to the SQL or dbt repo.
 
 ```toml
 [tool.sqlfluff.core]
-dialect = "bigquery"
+dialect = "athena"
 templater = "jinja"
 
 [tool.sqlfluff.templater.jinja]
@@ -49,14 +49,14 @@ apply_dbt_builtins = true
 
 ```ini
 [sqlfluff]
-dialect = bigquery
+dialect = athena
 templater = jinja
 
 [sqlfluff:templater:jinja]
 apply_dbt_builtins = True
 ```
 
-Change `dialect` to match the warehouse used by the project.
+Use `athena` for Athena-backed dbt projects. Change `dialect` for other warehouses, such as `bigquery`, `postgres`, or `snowflake`.
 
 ## Optional dbt-templater mode
 

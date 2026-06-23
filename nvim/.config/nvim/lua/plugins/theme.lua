@@ -58,17 +58,70 @@ return {
 					main = {
 						base = "#111111",
 						pine = "#3e9fb0",
+						bash_orange = "#ff7a5c",
+						bash_red = "#ff4d6d",
+						bash_yellow = "#eb6f92",
 					},
 				},
 
 				-- NOTE: Highlight groups are extended (merged) by default. Disable this
 				-- per group via `inherit = false`
 				highlight_groups = {
-					-- Comment = { fg = "foam" },
-					-- StatusLine = { fg = "love", bg = "love", blend = 15 },
-					-- VertSplit = { fg = "muted", bg = "muted" },
-					-- Visual = { fg = "base", bg = "text", inherit = false },
+					-- Make SQL/dbt feel closer to the richer Python highlighting.
+					["@keyword.sql"] = { fg = "iris", bold = true },
+					["@keyword.operator.sql"] = { fg = "rose" },
+					["@conditional.sql"] = { fg = "iris", bold = true },
+					["@repeat.sql"] = { fg = "iris", bold = true },
+					["@operator.sql"] = { fg = "rose" },
+					["@function.sql"] = { fg = "foam" },
+					["@function.builtin.sql"] = { fg = "foam", bold = true },
+					["@type.sql"] = { fg = "gold" },
+					["@string.sql"] = { fg = "pine" },
+					["@number.sql"] = { fg = "gold" },
+					["@variable.sql"] = { fg = "foam" },
+					["@variable.member.sql"] = { fg = "foam" },
+					["@property.sql"] = { fg = "foam" },
+					["@field.sql"] = { fg = "foam" },
+					["@constant.sql"] = { fg = "gold" },
+					["@punctuation.bracket.sql"] = { fg = "subtle" },
+					["@punctuation.delimiter.sql"] = { fg = "subtle" },
+
+					-- dbt/Jinja bits that appear inside SQL models.
+					["@keyword.jinja"] = { fg = "iris", bold = true },
+					["@function.jinja"] = { fg = "foam" },
+					["@variable.jinja"] = { fg = "rose" },
+					["@string.jinja"] = { fg = "pine" },
+					["@punctuation.bracket.jinja"] = { fg = "iris" },
+					["@punctuation.special.jinja"] = { fg = "iris" },
+
+					-- YAML, including GitHub Actions and dbt schema/source files.
+					["@property.yaml"] = { fg = "foam", bold = true },
+					["@field.yaml"] = { fg = "foam", bold = true },
+					["@string.yaml"] = { fg = "text" },
+					["@string.special.yaml"] = { fg = "rose" },
+					["@number.yaml"] = { fg = "gold" },
+					["@boolean.yaml"] = { fg = "iris", bold = true },
+					["@constant.yaml"] = { fg = "gold" },
+					["@operator.yaml"] = { fg = "rose" },
+					["@punctuation.delimiter.yaml"] = { fg = "subtle" },
+
+					-- Shell commands, especially inside GitHub Actions `run: |` blocks.
+					-- Keep these deliberately warm so embedded bash feels visually distinct
+					-- from the cooler YAML keys around it.
+					["@function.bash"] = { fg = "bash_orange", bold = true },
+					["@function.call.bash"] = { fg = "bash_orange", bold = true },
+					["@keyword.bash"] = { fg = "bash_red", bold = true },
+					["@conditional.bash"] = { fg = "bash_red", bold = true },
+					["@repeat.bash"] = { fg = "bash_red", bold = true },
+					["@variable.bash"] = { fg = "bash_yellow", italic = true },
+					["@string.bash"] = { fg = "rose" },
+					["@number.bash"] = { fg = "bash_orange" },
+					["@operator.bash"] = { fg = "bash_red" },
+					["@punctuation.special.bash"] = { fg = "bash_red" },
+					["@punctuation.bracket.bash"] = { fg = "bash_orange" },
 				},
+
+
 
 				before_highlight = function(group, highlight, palette)
 					-- Disable all undercurls
