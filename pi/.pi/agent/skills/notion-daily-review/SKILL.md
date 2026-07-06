@@ -1,6 +1,9 @@
 ---
-name: notion-daily-review
+id: SKILL
+aliases: []
+tags: []
 description: Append to and tidy Benjamin's Daily review section in today's Notion daily note using ntn. Use when the user says they have been working on something, wants to capture a point-in-time work reflection, add daily review content, or clean up/consolidate today's Daily review.
+name: notion-daily-review
 ---
 
 # Notion Daily Review
@@ -13,7 +16,7 @@ Use this skill when digiben asks to capture a short work reflection into today's
 - “clean up my daily review”
 - “turn today's snippets into a proper daily review”
 
-This skill is intentionally small: find today's `Daily Notes - DD/MM/YYYY` page, locate the `### Daily review` section near the bottom, and either append freeform content or consolidate the section.
+This skill is intentionally small: find today's `Daily Notes - DD/MM/YYYY` page, locate the `### Daily review` section near the bottom, and either append or consolidate semi-structured C.A.R. review entries.
 
 ## Requirements
 
@@ -91,28 +94,37 @@ Preserve all other page content.
 
 Use append mode when the user gives a point-in-time reflection, rough notes, or “I've been working on…” content.
 
-Append a small timestamped entry under `### Daily review`. Keep the user's voice. Do not over-format or over-summarise. Prefer this shape:
+Append a small timestamped C.A.R. entry under `### Daily review`. Keep the user's voice. Do not over-format or over-summarise. Prefer this shape:
 
 ```md
-**HH:mm — quick capture**
+#### HH:mm — Project / area
 
-- Worked on: ...
-- Tech / systems: ...
-- What was hard: ...
-- Interesting / learned: ...
-- Follow-up: ...
+**Technologies / systems:** ...
+
+**Context:** ...
+
+**Action:**
+- ...
+
+**Result / outcome:** ...
 ```
 
-Only include bullets that are supported by what the user said. If the user gives freeform prose, preserve it as prose under the timestamp rather than forcing every field.
+Use the C.A.R. method:
+
+- **Context:** the project, issue, situation, difficulty, uncertainty, background, and any relevant details. This is where “what I did”, “what was hard”, and messy day-to-day context can live.
+- **Action:** digiben's direct input, preferably with clear action verbs. Include interesting implementation/debugging notes here when they explain the work performed.
+- **Result / outcome:** what changed, what was completed, what was learned, what became clearer, or what useful insight came out of the work. Metrics are great when present, but most entries will be non-metric outcomes.
+
+Only include fields that are supported by what the user said, except keep the C.A.R. headings when there is enough information to do so. If the user gives very rough prose, lightly shape it into C.A.R. rather than preserving an inconsistent freeform block.
 
 Good content to capture:
 
 - technology, tools, systems, repos, tickets, or services involved
-- what digiben was doing
-- what was difficult or confusing
-- what was interesting or newly learned
-- decisions, debugging insights, blockers, next steps
-- useful CV/weekly-review language, without making it sound corporate
+- the project/issue context and why it mattered
+- what digiben directly did
+- what was difficult, confusing, or technically interesting
+- decisions, debugging insights, blockers, and things learned
+- outcomes useful for weekly review/CV mining, without making it sound corporate
 
 Do not invent details. If important context is missing, ask one short clarifying question only if needed; otherwise append what is available.
 
@@ -120,33 +132,32 @@ Do not invent details. If important context is missing, ask one short clarifying
 
 Use clean-up mode when the user asks to clean up, consolidate, or turn the daily review into a proper review.
 
-Read the existing `### Daily review` content and rewrite only that section into a coherent freeform review. Preserve useful details from all snippets, but remove duplication and timestamp noise.
+Read the existing `### Daily review` content and rewrite only that section into coherent C.A.R. entries. Preserve useful details from all snippets, but remove duplication and timestamp noise. Cleanup mode should use the same structure as append mode, just consolidated and tidied.
 
-Prefer this compact structure unless the existing notes suggest something better:
+Prefer this compact structure:
 
 ```md
-Today I worked on ...
+#### Project / area
 
-**Technology / systems:** ...
+**Technologies / systems:** ...
 
-**What I did:**
+**Context:** ...
+
+**Action:**
 - ...
 
-**What was hard:**
-- ...
-
-**Interesting / learned:**
-- ...
-
-**Follow-ups / useful for tomorrow:**
-- ...
+**Result / outcome:** ...
 ```
+
+If several snippets are about the same project/area, merge them into one entry. If the day covered distinct areas, keep multiple `#### Project / area` entries.
 
 Rules:
 
 - Keep it honest and concrete.
 - Keep the tone natural, like digiben's notes.
 - Preserve named technologies, systems, ticket references, and people when present.
+- Use C.A.R.: Context, Action, Result/outcome.
+- Do not add operational follow-up lists; this is for personal reflection and future CV/weekly-review mining, not task tracking.
 - Do not turn it into performative CV language, but make it useful for weekly review/CV mining later.
 - Rewrite only the `### Daily review` body. Do not change morning goals, deep work sections, tasks, or other end-of-day sections.
 
