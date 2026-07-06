@@ -16,6 +16,19 @@ local function sqlfluff_cwd(_, ctx)
   return vim.fs.root(filename, sqlfluff_root_files)
 end
 
+-- Only auto-format-on-save inside the SQL workbench (scratch, not version
+-- controlled). Everything else — notably the dbt project — is formatted only
+-- on demand via <leader>f, so PRs never pick up surprise reformatting diffs.
+local function is_workbench_file(bufnr)
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+
+  if filename == "" then
+    return false
+  end
+
+  return filename:find("/%.workbench/", 1) ~= nil
+end
+
 return {
   {
     "stevearc/conform.nvim",
@@ -54,28 +67,30 @@ return {
           stdin = true,
           cwd = sqlfluff_cwd,
           require_cwd = true,
+          -- sqlfluff exits 1 when unfixable, lint-only violations remain (e.g.
+          -- AM09 — LIMIT without ORDER BY, common in exploratory queries) while
+          -- still writing the best-effort fixed SQL to stdout. Accept it so the
+          -- fix is applied. A genuine usage/config error exits 2+, which stays
+          -- rejected and leaves the buffer untouched.
+          exit_codes = { 0, 1 },
         },
       },
-      format_on_save = nil,
-      -- Previous format-on-save setup, kept for reference:
-      -- format_on_save = function(bufnr)
-      --   local format_on_save = {
-      --     javascript = true,
-      --     json = true,
-      --     mysql = true,
-      --     plsql = true,
-      --     python = true,
-      --     sql = true,
-      --     typescript = true,
-      --     yaml = true,
-      --   }
-      --
-      --   if format_on_save[vim.bo[bufnr].filetype] then
-      --     return { lsp_fallback = false, timeout_ms = 2000 }
-      --   end
-      --
-      --   return nil
-      -- end,
+      -- Auto-format on save only for SQL files living in the workbench. dbt and
+      -- all other files stay untouched on save and rely on <leader>f instead.
+      format_on_save = function(bufnr)
+        local sql_filetypes = {
+          dbt = true,
+          mysql = true,
+          plsql = true,
+          sql = true,
+        }
+
+        if sql_filetypes[vim.bo[bufnr].filetype] and is_workbench_file(bufnr) then
+          return { lsp_fallback = false, timeout_ms = 2000 }
+        end
+
+        return nil
+      end,
     },
   },
 }
