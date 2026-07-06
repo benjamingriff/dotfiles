@@ -6,7 +6,7 @@ alt - g : open -a "Ghostty"
 alt - o : open -a "Obsidian"
 alt - t : open -a "Microsoft Teams"
 alt + shift - o : open -a "Microsoft Outlook"
-alt - d : open -a "DBeaver"
+alt - d : open "/Applications/DBeaver.app"
 alt + shift - f : open -a "Finder"
 
 alt - h : yabai -m window --focus west
