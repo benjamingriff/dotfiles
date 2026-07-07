@@ -11,6 +11,8 @@ bin/.bin/v4-dev.sh
 bin/.bin/v4-staging.sh
 bin/.bin/v4-prod.sh
 bin/.bin/dev-session.sh
+bin/.bin/staging-session.sh
+bin/.bin/prod-session.sh
 
 # Pi local/secrets/session state (do not commit)
 pi/.pi/agent/auth.json
