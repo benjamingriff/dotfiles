@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Render the AWS identity for the focused tmux pane and the validity of the
+# shared dev-session, staging-session, and prod-session credential profiles.
+
+set -u
+
+readonly STATUS_DIR="${AWS_SESSION_STATUS_DIR:-$HOME/.aws/session-status}"
+
+rose_pine_variant() {
+  local variant
+  variant="$(tmux show-option -gqv @rose_pine_variant 2>/dev/null || true)"
+  printf '%s' "${variant:-main}"
+}
+
+colors() {
+  case "$(rose_pine_variant)" in
+    dawn)
+      subtle='#797593'; foam='#56949f'; gold='#ea9d34'; love='#b4637a'; pine='#286983'
+      ;;
+    *)
+      subtle='#908caa'; foam='#9ccfd8'; gold='#f6c177'; love='#eb6f92'; pine='#31748f'
+      ;;
+  esac
+}
+
+right_separator() {
+  local separator
+  separator="$(tmux show-option -gqv @rose_pine_right_separator 2>/dev/null || true)"
+  printf '%s' "${separator:- < }"
+}
+
+pane_option() {
+  local pane_id="$1" option="$2"
+  tmux show-option -pqv -t "$pane_id" "$option" 2>/dev/null || true
+}
+
+is_future() {
+  local timestamp="$1" normalized epoch
+  [[ -n "$timestamp" ]] || return 1
+  normalized="$(printf '%s' "${timestamp/Z/+0000}" | sed -E 's/([+-][0-9]{2}):([0-9]{2})$/\1\2/')"
+  epoch="$(date -j -f '%Y-%m-%dT%H:%M:%S%z' "$normalized" '+%s' 2>/dev/null || true)"
+  [[ -n "$epoch" && "$epoch" -gt "$(date '+%s')" ]]
+}
+
+session_dot() {
+  local profile="$1" label="$2" expiration=''
+  [[ -f "$STATUS_DIR/$profile" ]] && IFS= read -r expiration <"$STATUS_DIR/$profile"
+  if is_future "$expiration"; then
+    printf '#[fg=%s]%s ●' "$pine" "$label"
+  else
+    printf '#[fg=%s]%s ●' "$love" "$label"
+  fi
+}
+
+main() {
+  local pane_id="${1:-${TMUX_PANE:-}}" account expiration account_color separator
+  colors
+  separator="$(right_separator)"
+
+  account='DEFAULT'
+  expiration=''
+  if [[ -n "$pane_id" ]]; then
+    account="$(pane_option "$pane_id" @aws_account)"
+    expiration="$(pane_option "$pane_id" @aws_account_expiry)"
+    account="${account:-DEFAULT}"
+  fi
+
+  case "$account" in
+    DEV) account_color="$foam" ;;
+    STAGING) account_color="$gold" ;;
+    PROD) account_color="$love" ;;
+    *) account='DEFAULT'; account_color="$subtle" ;;
+  esac
+
+  # Temporary role credentials are no longer active after their expiry.
+  if [[ "$account" != 'DEFAULT' ]] && ! is_future "$expiration"; then
+    account_color="$love"
+    account="${account}!"
+  fi
+
+  printf '#[fg=%s]AWS:%s#[fg=%s]  ' "$account_color" "$account" "$subtle"
+  session_dot dev-session Dev
+  printf '#[fg=%s]  ' "$subtle"
+  session_dot staging-session Staging
+  printf '#[fg=%s]  ' "$subtle"
+  session_dot prod-session Prod
+  printf '#[fg=%s]%s#[default]' "$subtle" "$separator"
+}
+
+main "$@"
