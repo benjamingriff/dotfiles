@@ -50,6 +50,27 @@ npm install -g tree-sitter-cli
 
 Without this, Python files may open with no Treesitter syntax highlighting, and `:checkhealth nvim-treesitter` will report `tree-sitter-cli not found`.
 
+### Neovim profiles
+
+The repository has two alternative Neovim Stow packages:
+
+- `nvim` — the existing work-focused configuration.
+- `nvim-omarchy` — a portable snapshot of the LazyVim setup from the Omarchy machine.
+
+Do not stow both because both provide `~/.config/nvim`. To switch profiles:
+
+```bash
+stow -D nvim
+stow -t "$HOME" nvim-omarchy
+```
+
+The Omarchy profile vendors its current Tokyo Night theme rather than retaining
+the machine-specific symlink into `~/.config/omarchy`. Its complete dependency
+and installation notes are in
+[`nvim-omarchy/.config/nvim/README.md`](nvim-omarchy/.config/nvim/README.md).
+It is intentionally not included in `install.sh`, which continues to install the
+existing `nvim` profile by default.
+
 ─────────────────────────────────────────
 
 ## 🔧 Managing Packages
