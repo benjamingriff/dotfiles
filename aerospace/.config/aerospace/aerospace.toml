@@ -17,7 +17,7 @@ on-focused-monitor-changed = []
 automatically-unhide-macos-hidden-apps = false
 
 # Keep app-oriented workspaces alive, even before their apps have windows.
-persistent-workspaces = ['zen', 'ghostty', 'notion', 'slack', 'dbeaver', 'teams', 'outlook', 'claude']
+persistent-workspaces = ['zen', 'ghostty', 'notion', 'slack', 'dbeaver', 'teams', 'outlook', 'claude', 't3']
 
 
 [key-mapping]
@@ -40,9 +40,11 @@ persistent-workspaces = ['zen', 'ghostty', 'notion', 'slack', 'dbeaver', 'teams'
     alt-z = 'exec-and-forget /bin/bash -lc "aerospace workspace zen; open -a Zen"'
     alt-g = 'exec-and-forget /bin/bash -lc "aerospace workspace ghostty; open -a Ghostty"'
     alt-o = 'exec-and-forget /bin/bash -lc "aerospace workspace outlook; open -a \"Microsoft Outlook\""'
-    alt-t = 'exec-and-forget /bin/bash -lc "aerospace workspace teams; open -a \"Microsoft Teams\""'
+    alt-shift-t = 'exec-and-forget /bin/bash -lc "aerospace workspace teams; open -a \"Microsoft Teams\""'
     alt-d = 'exec-and-forget /bin/bash -lc "aerospace workspace dbeaver; open -a DBeaver"'
     alt-c = 'exec-and-forget /bin/bash -lc "aerospace workspace claude; open -a Claude"'
+    # Bundle id rather than app name — the app is currently "T3 Code (Alpha)".
+    alt-t = 'exec-and-forget /bin/bash -lc "aerospace workspace t3; open -b com.t3tools.t3code"'
     alt-shift-d = 'exec-and-forget open -a Dash'
     alt-shift-f = 'exec-and-forget open -a Finder'
     cmd-alt-t = 'exec-and-forget /bin/bash -lc "aerospace workspace zen; open -a Zen https://t3.chat"'
@@ -62,6 +64,7 @@ persistent-workspaces = ['zen', 'ghostty', 'notion', 'slack', 'dbeaver', 'teams'
     alt-6 = 'workspace teams'
     alt-7 = 'workspace outlook'
     alt-8 = 'workspace claude'
+    alt-9 = 'workspace t3'
 
     # Window actions from skhd/yabai.
     alt-q = 'close'
@@ -115,3 +118,7 @@ persistent-workspaces = ['zen', 'ghostty', 'notion', 'slack', 'dbeaver', 'teams'
 [[on-window-detected]]
     if.app-id = 'com.anthropic.claudefordesktop'
     run = 'move-node-to-workspace claude'
+
+[[on-window-detected]]
+    if.app-id = 'com.t3tools.t3code'
+    run = 'move-node-to-workspace t3'
