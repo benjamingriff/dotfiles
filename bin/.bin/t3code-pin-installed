@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Pin the t3code-installed worktree to the git tag matching the installed T3 Code
+# desktop app, so questions about "the version I'm running" read that release's
+# source instead of unreleased main.
+#
+# T3 Code tags every shipped build: stable as vX.Y.Z, nightly as
+# vX.Y.Z-nightly.YYYYMMDD.<run>. The tag is the commit the artifacts were built
+# from, so v<installed-version> is the exact source of the running app. Note the
+# version field committed inside a tag is one release behind (the release
+# workflow aligns versions at build time and commits the bump to main
+# afterwards) -- trust the tag name, never the package.json inside it.
+#
+# Runs as a SessionStart hook in the pinned worktree. Emits the hook's
+# additionalContext JSON when piped, plain text on a TTY. Always exits 0: a
+# failed pin should never block a session, only explain itself.
+set -uo pipefail
+
+MAIN="$HOME/oss-repos/t3code"
+PINNED="$HOME/oss-repos/t3code-installed"
+
+emit() {
+  if [ -t 1 ]; then
+    printf '%s\n' "$1"
+  else
+    python3 -c 'import json,sys; print(json.dumps({"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":sys.argv[1]}}))' "$1"
+  fi
+  exit 0
+}
+
+[ -d "$PINNED" ] || emit "T3 Code version pin: worktree is missing. Recreate it with: git -C $MAIN worktree add --detach $PINNED v<installed-version>"
+
+# Tolerates the "(Alpha)" suffix and any future rename of the bundle.
+shopt -s nullglob
+apps=(/Applications/T3\ Code*.app)
+shopt -u nullglob
+[ ${#apps[@]} -gt 0 ] || emit "T3 Code version pin: no T3 Code app found in /Applications, so the installed version is unknown. Pin left unchanged."
+
+installed=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "${apps[0]}/Contents/Info.plist" 2>/dev/null)
+[ -n "$installed" ] || emit "T3 Code version pin: could not read a version from ${apps[0]}. Pin left unchanged."
+tag="v$installed"
+
+resolve() { git -C "$MAIN" rev-parse --verify -q "refs/tags/$1^{commit}" 2>/dev/null; }
+
+want=$(resolve "$tag")
+have=$(git -C "$PINNED" rev-parse HEAD 2>/dev/null)
+
+# Fast path: already correct, so no network and no git write.
+[ -n "$want" ] && [ "$want" = "$have" ] && emit "This worktree is pinned at $tag, the exact source of the installed T3 Code desktop app ($installed). Answer questions about the running app from this tree. Unreleased work on main is NOT in here."
+
+# Fetch only the one tag we need. A plain --tags fetch would drag in the nightly
+# tag firehose (roughly eight new tags a day).
+if [ -z "$want" ]; then
+  git -C "$MAIN" fetch --no-tags --quiet origin "refs/tags/$tag:refs/tags/$tag" 2>/dev/null
+  want=$(resolve "$tag")
+fi
+
+[ -n "$want" ] || emit "T3 Code version pin: installed app reports $installed but origin has no release tag $tag (a locally built or unreleased app would do this). Pin left at $have."
+
+if ! out=$(git -C "$PINNED" checkout --detach --quiet "$tag" 2>&1); then
+  emit "T3 Code version pin: could not move the worktree to $tag, so it is still at $have. Check for local modifications. git said: $out"
+fi
+
+emit "This worktree was just re-pinned to $tag to match the installed T3 Code desktop app ($installed). Answer questions about the running app from this tree. Unreleased work on main is NOT in here."
